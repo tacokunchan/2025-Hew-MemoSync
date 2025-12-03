@@ -1,9 +1,10 @@
-import Image from "next/image";
+import SignInPage from "@/components/SignInComponent/SignIn";
+
 
 export default function Home() {
   return (
    <div>
-     ここから始まる共有メモアプリ
+     <SignInPage />
    </div>
   );
 }
