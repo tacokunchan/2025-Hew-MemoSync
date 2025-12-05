@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import { SignUpProsess } from '@/app/api/users/route';
 import styles from './SignIn.module.css';
 
 const SignInPage = () => {
@@ -11,12 +12,14 @@ const SignInPage = () => {
     e.preventDefault();
     console.log('サインインボタンがクリックされました');
 
-    const res = await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email,username, password }),
-    });
-
+    const res = await SignUpProsess(email,username,password);
+    if (!res.ok) {
+      console.error("サインインエラー:", res.statusText);
+      return;
+    }
+    if (res.ok) {
+      console.log("サインイン成功");
+    }
     const data = await res.json();
     console.log("APIレスポンス:", data);
   };
