@@ -1,10 +1,7 @@
 'use client';
 
 import React from "react";
-import { LoginProsess } from "@/app/api/users/route";
 import styles from './LogIn.module.css';
-import { request } from "http";
-
 
 
 const LogInPageComponent = () => {
@@ -15,13 +12,19 @@ const LogInPageComponent = () => {
     const handleLogIn = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         console.log('ログインボタンがクリックされました');
-        const res = await LoginProsess(email,password);
+        const res = await fetch("/api/users/Login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email,password }),
+        });
+
+
         if (!res || !res.ok) {
             console.error("ログインエラー:", res?.statusText);
             return;
         }
-    
-    
+
+
     }
 
 
@@ -31,11 +34,11 @@ const LogInPageComponent = () => {
             <form onSubmit={handleLogIn}>
                 <label>
                     Email
-                    <input type="text" name="email" onChange={(e) => setEmail(e.target.value)}/>
+                    <input type="text" name="email" onChange={(e) => setEmail(e.target.value)} />
                 </label>
                 <label>
                     Password
-                    <input type="password" name="password" onChange={(e) => setPassword(e.target.value)}/>
+                    <input type="password" name="password" onChange={(e) => setPassword(e.target.value)} />
                 </label>
                 <input type="submit" value="Log In" />
 
@@ -47,6 +50,7 @@ const LogInPageComponent = () => {
 
 
         </div>
-    );}
+    );
+}
 
-    export default LogInPageComponent;
+export default LogInPageComponent;

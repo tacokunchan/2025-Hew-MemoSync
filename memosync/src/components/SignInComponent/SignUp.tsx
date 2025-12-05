@@ -1,6 +1,5 @@
 "use client";
 import React from 'react';
-import { SignUpProsess } from '@/app/api/users/route';
 import styles from './SignIn.module.css';
 
 const SignInPage = () => {
@@ -12,7 +11,13 @@ const SignInPage = () => {
     e.preventDefault();
     console.log('サインインボタンがクリックされました');
 
-    const res = await SignUpProsess(email,username,password);
+    const res = await fetch("/api/users/SignUp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, username, password }),
+    });
+
+
     if (!res.ok) {
       console.error("サインインエラー:", res.statusText);
       return;
@@ -30,7 +35,7 @@ const SignInPage = () => {
         <h1 className={styles.title}>サインイン</h1>
         <form onSubmit={handleSignUp}>
           {/* mail*/}
-           <div className={styles.formGroup}>
+          <div className={styles.formGroup}>
             <label className={styles.label}>
               メールアドレス
               <input
