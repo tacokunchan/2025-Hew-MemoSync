@@ -1,0 +1,81 @@
+/* 画面全体の中央寄せ背景 */
+.container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f4f6f8; /* 薄いグレーの背景 */
+  padding: 20px;
+}
+
+/* 白いカード部分 */
+.card {
+  background-color: #ffffff;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px; /* 横幅が広がりすぎないように制限 */
+}
+
+/* タイトル */
+.title {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #333;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+/* 入力エリアのまとまり */
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+/* ラベル */
+.label {
+  display: flex;
+  flex-direction: column; /* ラベルの文字と入力欄を縦並びにする */
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 600;
+  gap: 8px; /* 文字と入力欄の間隔 */
+}
+
+/* 入力ボックス */
+.input {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box; /* パディングを含めた幅計算にする */
+}
+
+/* 入力ボックスにフォーカスした時 */
+.input:focus {
+  border-color: #3b82f6; /* 青色 */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* 送信ボタン */
+.button {
+  width: 100%;
+  padding: 14px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+/* ボタンにマウスを乗せた時 */
+.button:hover {
+  background-color: #2563eb;
+}

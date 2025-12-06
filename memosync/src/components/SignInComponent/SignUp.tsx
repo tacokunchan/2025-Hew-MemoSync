@@ -143,6 +143,7 @@ const SignInPage = () => {
             value="サインイン"
             className={styles.button}
           />
+          <a href="/LogIn" className={styles.link}>すでにアカウントをお持ちの方はこちら</a>
         </form>
       </div>
     </div>
