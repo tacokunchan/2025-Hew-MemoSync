@@ -2,7 +2,7 @@
 
 import React from "react";
 import styles from './LogIn.module.css';
-import { useRouter } from 'next/navigation'; // ルーターを使うためにインポート
+import { useRouter } from 'next/navigation'; 
 
 const LogInPageComponent = () => {
     const router = useRouter();
@@ -64,8 +64,8 @@ const LogInPageComponent = () => {
 
             // 成功時
             console.log("ログイン成功");
-            // ★ログイン後の遷移先（ダッシュボードやホーム画面など）を指定してください
-            router.push('/'); 
+            localStorage.setItem('userId', data.id);
+            router.push('/Home');   
 
         } catch (error) {
             console.error("通信エラー:", error);

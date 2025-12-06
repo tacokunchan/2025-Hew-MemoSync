@@ -8,19 +8,25 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// 既存のUserモデルに memos を追加
 model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
+  id       String @id @default(uuid())
+  email    String @unique
   username String?
   password String
-  posts    Post[]
+  // ▼ 追加: ユーザーが作成したメモのリスト
+  memos    Memo[]
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
+// ▼ 追加: メモのモデル
+model Memo {
+  id        String   @id @default(uuid())
   title     String
   content   String?
-  published Boolean @default(false)
-  authorId  Int
-  author    User    @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 誰のメモか紐付ける設定
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }

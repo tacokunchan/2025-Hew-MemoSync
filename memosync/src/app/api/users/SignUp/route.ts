@@ -39,7 +39,8 @@ export async function POST(request: Request) {
       data: {
         email: email,
         username: username,
-        password: hashedPassword, // 本番環境ではパスワードはハッシュ化することを強く推奨します
+        password: password,
+        //password: hashedPassword, // 本番環境ではパスワードはハッシュ化することを強く推奨します
       },
     })
     if (!SignUpProsess) {
