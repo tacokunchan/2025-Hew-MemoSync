@@ -1,0 +1,71 @@
+/* --- ヘッダー全体 --- */
+.header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  border-bottom: 1px solid #ddd;
+  background-color: #fff;
+  flex-shrink: 0; /* 縮まないように */
+}
+
+/* --- ハンバーガーボタン本体 --- */
+.menuButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  
+  /* ボタンのサイズ */
+  width: 30px;
+  height: 24px;
+  
+  /* 3本線を縦に並べる設定 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 上・中・下に均等配置 */
+  
+  margin-right: 15px; /* タイトルとの間隔 */
+  padding: 0; /* 余計な隙間を消す */
+}
+
+/* --- 3本の線 --- */
+.bar {
+  display: block;
+  width: 100%;       /* 親の幅(30px)いっぱいにする */
+  height: 3px;       /* 線の太さ */
+  background-color: #333; /* 線の色（黒） */
+  border-radius: 3px; /* 角を丸く */
+  transition: all 0.2s; /* ホバー時の動き（お好みで） */
+}
+
+/* ホバー時に少し色を変える（任意） */
+.menuButton:hover .bar {
+  background-color: #555;
+}
+
+/* --- タイトル入力欄 --- */
+.titleInput {
+  flex: 1;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+/* --- 右上のボタン群 --- */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.previewButton, .saveButton, .deleteButton {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.previewButton { background: #eee; }
+.saveButton { background: #333; color: #fff; }
+.deleteButton { background: #fff; border: 1px solid #d32f2f; color: #d32f2f; }
