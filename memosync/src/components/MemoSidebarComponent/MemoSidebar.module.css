@@ -1,0 +1,80 @@
+/* --- 共通: サイドバーの中身のレイアウト --- */
+.sidebar {
+  background-color: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden; /* 閉じた時に中身がはみ出さないように */
+  white-space: nowrap; /* 閉じる途中に文字が改行されるのを防ぐ */
+  z-index: 100;
+}
+
+/* --- ヘッダー・リスト・フッター（前回のまま） --- */
+.header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #fff;
+  display: flex; justify-content: space-between; align-items: center;
+  min-width: 260px; /* 幅が縮んでも崩れないように固定幅を指定 */
+}
+.header h2 { font-size: 1.1rem; margin: 0; font-weight: bold; color: #333; }
+.newButton { background: #333; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+
+.list { 
+  list-style: none; padding: 0; margin: 0; flex: 1; overflow-y: auto; background: #fff; 
+  min-width: 260px; /* 幅確保 */
+}
+.item { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; color: #333; }
+.item:hover { background-color: #f5f5f5; }
+.activeItem { background-color: #e6f7ff; color: #0070f3; font-weight: bold; border-left: 4px solid #0070f3; }
+.emptyItem { padding: 20px; color: #999; text-align: center; }
+
+
+/* =========================================
+   ここから下が開閉動作のキモです
+   ========================================= */
+
+/* --- モバイル用（画面幅 768px未満） --- */
+.overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 99;
+  opacity: 0; visibility: hidden; transition: opacity 0.3s;
+}
+.overlayOpen { opacity: 1; visibility: visible; }
+
+.sidebar {
+  /* モバイルは「画面の外からスライド」 */
+  position: fixed;
+  top: 0; left: 0;
+  width: 260px;
+  border-right: 1px solid #ddd;
+  
+  transform: translateX(-100%); /* 左に隠す */
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.sidebarOpen {
+  transform: translateX(0); /* 出す */
+}
+
+
+/* --- PC用（画面幅 768px以上） --- */
+@media (min-width: 768px) {
+  .overlay { display: none; } /* PCでは暗幕不要 */
+
+  .sidebar {
+    /* PCは「横に並んで幅が伸縮する」 */
+    position: relative; /* 固定しない */
+    transform: none;    /* スライド移動を解除 */
+    
+    width: 0;           /* ★デフォルトは幅0（閉じた状態） */
+    border-right: none;
+    transition: width 0.3s ease; /* 幅のアニメーション */
+  }
+
+  .sidebarOpen {
+    width: 260px;       /* ★開くと幅が出る */
+    border-right: 1px solid #ddd;
+  }
+}

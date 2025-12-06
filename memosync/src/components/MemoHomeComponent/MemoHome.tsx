@@ -2,26 +2,42 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+import MemoHeader from '@/components/MemoHeaderComponent/MemoHeader';
+import MemoSidebar from '@/components/MemoSidebarComponent/MemoSlider';
+
+// CSS: サイドバーとエディタを横並びにするFlexコンテナ
+// 簡易的にインラインまたはグローバルCSSでもいいですが、modules推奨
 import styles from './MemoHome.module.css';
 
 type Memo = {
   id: string;
   title: string;
   content: string;
-  updatedAt?: string; // 更新日時もあると便利
+  updatedAt?: string;
 };
 
 export default function Home() {
   const router = useRouter();
-  const [memos, setMemos] = useState<Memo[]>([]);
+  
+  // --- State管理 ---
   const [userId, setUserId] = useState<string | null>(null);
-  const [isNavOpen, setIsNavOpen] = useState(false);
-
-  // フォーム用State
+  const [memos, setMemos] = useState<Memo[]>([]);
+  
+  // 選択中のメモID (nullなら新規作成モード)
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  
+  // エディタの中身
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // UI状態
+  const [isNavOpen, setIsNavOpen] = useState(true); // PCなら最初から開いておく
+  const [isPreview, setIsPreview] = useState(false);
 
+  // --- 初期化 ---
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     if (!storedUserId) {
@@ -30,8 +46,14 @@ export default function Home() {
     }
     setUserId(storedUserId);
     fetchMemos(storedUserId);
+
+    // スマホならサイドバーを初期状態で閉じる
+    if (window.innerWidth < 768) {
+      setIsNavOpen(false);
+    }
   }, []);
 
+  // --- API連携 ---
   const fetchMemos = async (uid: string) => {
     const res = await fetch(`/api/memos?userId=${uid}`);
     if (res.ok) {
@@ -40,156 +62,113 @@ export default function Home() {
     }
   };
 
-  // 作成・更新処理
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // 保存処理
+  const handleSave = async () => {
     if (!userId) return;
 
-    if (editingId) {
+    if (selectedId) {
       // 更新
-      await fetch(`/api/memos/${editingId}`, {
+      await fetch(`/api/memos/${selectedId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content }),
       });
     } else {
       // 新規作成
-      await fetch('/api/memos', {
+      const res = await fetch('/api/memos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content, userId }),
       });
+      if (res.ok) {
+        // 新規作成後は、その作成したメモを選択状態にするなどの工夫が可能
+        // ここでは簡易的にリセットしてリスト再取得
+      }
     }
-
-    // 完了後、フォームをクリアして新規作成モードに戻す
-    handleNewMemo(); 
-    fetchMemos(userId);
-    setIsNavOpen(false); // スマホなら保存時にメニューを閉じると親切
+    // リストを最新にする
+    await fetchMemos(userId);
+    // 新規作成だった場合、入力内容はそのまま維持するか、クリアするか。
+    // 今回は「保存した感」を出すためそのままでOK
+    alert('保存しました');
   };
 
-  // 削除処理（メイン画面のボタンから実行）
+  // 削除処理
   const handleDelete = async () => {
-    if (!editingId) return;
-    if (!confirm('このメモを削除しますか？')) return;
+    if (!selectedId) return;
+    if (!confirm('削除しますか？')) return;
+
+    await fetch(`/api/memos/${selectedId}`, { method: 'DELETE' });
     
-    await fetch(`/api/memos/${editingId}`, { method: 'DELETE' });
-    
-    handleNewMemo(); // フォームをクリア
-    if (userId) fetchMemos(userId);
+    // リスト更新＆新規作成モードへ戻る
+    await fetchMemos(userId!);
+    handleCreateNew(); 
   };
 
-  // サイドバーのリストをクリックした時
-  const handleMemoSelect = (memo: Memo) => {
-    setEditingId(memo.id);
+  // --- UI操作 ---
+  
+  // サイドバーでメモを選択した時
+  const handleSelectMemo = (memo: Memo) => {
+    setSelectedId(memo.id);
     setTitle(memo.title);
     setContent(memo.content);
-    setIsNavOpen(false); // 選択したらメニューを閉じる
+    setIsPreview(false); // 編集モードに戻す
   };
 
-  // 「新規作成」ボタンを押した時（フォームをクリア）
-  const handleNewMemo = () => {
-    setEditingId(null);
+  // 「＋新規」ボタンを押した時
+  const handleCreateNew = () => {
+    setSelectedId(null); // IDをnullに＝新規モード
     setTitle('');
     setContent('');
-    setIsNavOpen(false);
-  };
-
-  const handleLogout = () => {
-    if (confirm('ログアウトしますか？')) {
-      localStorage.removeItem('userId');
-      router.push('/components/LogInComponent/LogIn');
-    }
+    setIsPreview(false);
+    // スマホならサイドバーを閉じる
+    if (window.innerWidth < 768) setIsNavOpen(false);
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.appContainer}>
       
-      {/* 1. 暗幕 */}
-      <div 
-        className={`${styles.overlay} ${isNavOpen ? styles.overlayOpen : ''}`} 
-        onClick={() => setIsNavOpen(false)}
+      {/* 1. 左側: サイドバー */}
+      <MemoSidebar
+        isOpen={isNavOpen}
+        onClose={() => setIsNavOpen(false)}
+        memos={memos}
+        currentMemoId={selectedId}
+        onSelect={handleSelectMemo}
+        onCreateNew={handleCreateNew}
       />
 
-      {/* 2. サイドバー（ここに一覧を入れる） */}
-      <nav className={`${styles.sidebar} ${isNavOpen ? styles.sidebarOpen : ''}`}>
+      {/* 2. 右側: メインエリア（ヘッダー ＋ エディタ） */}
+      <div className={styles.mainArea}>
         
-        {/* サイドバー上部：操作ボタン */}
-        <div className={styles.sidebarHeader}>
-          <button onClick={handleNewMemo} className={styles.newButton}>
-            ＋ 新しいメモ
-          </button>
-          <button onClick={handleLogout} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>
-            ログアウト
-          </button>
-        </div>
+        <MemoHeader
+          title={title}
+          setTitle={setTitle}
+          onToggleNav={() => setIsNavOpen(!isNavOpen)}
+          onSave={handleSave}
+          onDelete={selectedId ? handleDelete : undefined}
+          isPreview={isPreview}
+          setIsPreview={setIsPreview}
+          showEditorControls={true} // 常時エディタUIを表示
+        />
 
-        {/* メモ一覧リスト */}
-        <ul className={styles.memoList}>
-          {memos.map((memo) => (
-            <li 
-              key={memo.id} 
-              className={`${styles.memoItem} ${editingId === memo.id ? styles.activeMemo : ''}`}
-              onClick={() => handleMemoSelect(memo)}
-            >
-              <h3 className={styles.memoTitle}>{memo.title}</h3>
-              {/* 日付などを出すとおしゃれですが今回はシンプルに */}
-            </li>
-          ))}
-          {memos.length === 0 && (
-            <li style={{ padding: '20px', color: '#888', textAlign: 'center' }}>
-              メモがありません
-            </li>
+        <main className={styles.editorBody}>
+          {isPreview ? (
+            <div className={styles.previewArea}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content || '(本文なし)'}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <textarea
+              className={styles.textArea}
+              placeholder="Markdown形式でメモを入力..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
           )}
-        </ul>
-      </nav>
+        </main>
 
-      {/* 3. メインエリア */}
-      <div className={styles.header}>
-        {/* ハンバーガーボタン */}
-        <button className={styles.menuButton} onClick={() => setIsNavOpen(true)}>
-          <div className={styles.bar}></div>
-          <div className={styles.bar}></div>
-          <div className={styles.bar}></div>
-        </button>
-        <h1>{editingId ? '編集中' : '新規作成'}</h1>
       </div>
-
-      <div className={styles.formArea}>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="タイトルを入力"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className={styles.input}
-            required
-          />
-          <textarea
-            placeholder="ここにメモを入力..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className={styles.textarea}
-          />
-          
-          <div className={styles.buttonGroup}>
-            <button type="submit" className={styles.saveButton}>
-              {editingId ? '更新して保存' : '保存する'}
-            </button>
-            
-            {/* 編集中のみ削除ボタンを表示 */}
-            {editingId && (
-              <button 
-                type="button" 
-                onClick={handleDelete} 
-                className={styles.deleteButton}
-              >
-                削除
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
-
     </div>
   );
 }
