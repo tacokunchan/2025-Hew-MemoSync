@@ -24,20 +24,21 @@ export async function GET(request: Request) {
 }
 
 // 新規作成 (POST)
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { title, content, userId } = body;
+// app/api/memos/route.ts のPOSTメソッドの例
 
-    const newMemo = await prisma.memo.create({
-      data: {
-        title,
-        content,
-        userId,
-      },
-    });
-    return NextResponse.json(newMemo, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error creating memo' }, { status: 500 });
-  }
+export async function POST(req: Request) {
+  const body = await req.json();
+  const { title, content, userId, createdAt } = body; // ★createdAtを受け取る
+
+  const memo = await prisma.memo.create({
+    data: {
+      title,
+      content,
+      userId,
+      // ★ここが重要！送られてきたcreatedAtがあれば使い、なければ現在時刻(now)にする
+      createdAt: createdAt ? new Date(createdAt) : new Date(), 
+    },
+  });
+  
+  return NextResponse.json(memo);
 }
