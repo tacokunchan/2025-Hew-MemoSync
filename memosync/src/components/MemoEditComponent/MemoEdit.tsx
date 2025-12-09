@@ -1,4 +1,3 @@
-// app/memo/[id]/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -6,17 +5,18 @@ import { useRouter, useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// ▼ 作ったコンポーネントをインポート
 import MemoHeader from '@/components/MemoHeaderComponent/MemoHeader';
-import MemoSidebar from '@/components/MemoSidebarComponent/MemoSlider';
+import MemoSidebar from '@/components/MemoSidebarComponent/MemoSidebar';
 
-// CSSはエディタ本体のスタイルだけ残す（または共通化）
 import styles from './editor.module.css';
 
+// 型定義
 type Memo = {
   id: string;
   title: string;
   content: string;
+  updatedAt?: string;
+  createdAt: string;
 };
 
 export default function EditorPage() {
@@ -26,10 +26,9 @@ export default function EditorPage() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [memos, setMemos] = useState<Memo[]>([]); // サイドバー用
+  const [memos, setMemos] = useState<Memo[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   
-  // UI状態
   const [isPreview, setIsPreview] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
 
@@ -72,7 +71,12 @@ export default function EditorPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    router.push('/');
+    
+    // 保存後は最新リストを取得してリロード
+    fetchMemos(userId); 
+    // もし一覧に戻りたいなら router.push('/') ですが、
+    // 編集画面に留まるならそのままでOK
+    if (memoId === 'new') router.push('/'); 
   };
 
   const handleDelete = async () => {
@@ -83,40 +87,48 @@ export default function EditorPage() {
 
   return (
     <div className={styles.fullScreenContainer}>
-      {/* ▼ サイドバーコンポーネント */}
+      
+      {/* 1. 左側: サイドバー */}
       <MemoSidebar 
         isOpen={isNavOpen} 
         onClose={() => setIsNavOpen(false)} 
         memos={memos}
         currentMemoId={memoId}
+        onSelect={(memo) => router.push(`/memo/${memo.id}`)}
+        onCreateNew={() => router.push('/memo/new')}
+        onOpenCalendar={() => {}} 
       />
 
-      {/* ▼ ヘッダーコンポーネント */}
-      <MemoHeader
-        title={title}
-        setTitle={setTitle}
-        onToggleNav={() => setIsNavOpen(!isNavOpen)}
-        onSave={handleSubmit}
-        onDelete={memoId !== 'new' ? handleDelete : undefined}
-        isPreview={isPreview}
-        setIsPreview={setIsPreview}
-      />
+      {/* 2. 右側: メインエリア（ヘッダーとエディタをまとめる） */}
+      <div className={styles.mainContent}>
+        
+        <MemoHeader
+          title={title}
+          setTitle={setTitle}
+          onToggleNav={() => setIsNavOpen(!isNavOpen)}
+          onSave={handleSubmit}
+          onDelete={memoId !== 'new' ? handleDelete : undefined}
+          isPreview={isPreview}
+          setIsPreview={setIsPreview}
+          showEditorControls={true}
+        />
 
-      {/* メインエディタエリア */}
-      <main className={styles.editorBody}>
-        {isPreview ? (
-          <div className={styles.previewArea}>
-             <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-          </div>
-        ) : (
-          <textarea
-            placeholder="Markdownを入力..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className={styles.textArea}
-          />
-        )}
-      </main>
+        <main className={styles.editorBody}>
+          {isPreview ? (
+            <div className={styles.previewArea}>
+               <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            </div>
+          ) : (
+            <textarea
+              placeholder="Markdownを入力..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className={styles.textArea}
+            />
+          )}
+        </main>
+      </div>
+      
     </div>
   );
 }

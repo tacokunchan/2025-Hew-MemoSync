@@ -6,10 +6,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import MemoHeader from '@/components/MemoHeaderComponent/MemoHeader';
-import MemoSidebar from '@/components/MemoSidebarComponent/MemoSlider';
+import MemoSidebar from '@/components/MemoSidebarComponent/MemoSidebar';
+import CalendarModal from '@/components/CalendarModalComponent/CalendarModal';
 
-// CSS: サイドバーとエディタを横並びにするFlexコンテナ
-// 簡易的にインラインまたはグローバルCSSでもいいですが、modules推奨
 import styles from './MemoHome.module.css';
 
 type Memo = {
@@ -17,27 +16,28 @@ type Memo = {
   title: string;
   content: string;
   updatedAt?: string;
+  createdAt: string; 
 };
 
 export default function Home() {
   const router = useRouter();
   
-  // --- State管理 ---
   const [userId, setUserId] = useState<string | null>(null);
   const [memos, setMemos] = useState<Memo[]>([]);
   
-  // 選択中のメモID (nullなら新規作成モード)
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
-  // エディタの中身
+  // エディタの状態
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   
-  // UI状態
-  const [isNavOpen, setIsNavOpen] = useState(true); // PCなら最初から開いておく
+  // ★追加: 新規作成時のターゲット日付（指定がなければnull）
+  const [targetDate, setTargetDate] = useState<Date | null>(null);
+  
+  const [isNavOpen, setIsNavOpen] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // --- 初期化 ---
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     if (!storedUserId) {
@@ -47,87 +47,123 @@ export default function Home() {
     setUserId(storedUserId);
     fetchMemos(storedUserId);
 
-    // スマホならサイドバーを初期状態で閉じる
     if (window.innerWidth < 768) {
       setIsNavOpen(false);
     }
   }, []);
 
-  // --- API連携 ---
   const fetchMemos = async (uid: string) => {
-    const res = await fetch(`/api/memos?userId=${uid}`);
-    if (res.ok) {
-      const data = await res.json();
-      setMemos(data);
+    try {
+      const res = await fetch(`/api/memos?userId=${uid}`);
+      if (res.ok) {
+        const data: Memo[] = await res.json();
+        // 作成日時の新しい順に並び替え
+        const sortedData = data.sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+          const dateB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+          return dateB - dateA; // 降順
+        });
+        setMemos(sortedData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch memos", error);
     }
   };
 
-  // 保存処理
+  // ★修正: 保存処理
+ // 保存処理
   const handleSave = async () => {
     if (!userId) return;
 
-    if (selectedId) {
-      // 更新
-      await fetch(`/api/memos/${selectedId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content }),
-      });
-    } else {
-      // 新規作成
-      const res = await fetch('/api/memos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content, userId }),
-      });
-      if (res.ok) {
-        // 新規作成後は、その作成したメモを選択状態にするなどの工夫が可能
-        // ここでは簡易的にリセットしてリスト再取得
+    try {
+      if (selectedId) {
+        // 更新 (PUT)
+        await fetch(`/api/memos/${selectedId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content }),
+        });
+      } else {
+        // --- 新規作成 (POST) ---
+        
+        // ★修正ポイント: targetDateがあればそれを使い、なければ現在時刻を使う
+        const createdAt = targetDate ? targetDate.toISOString() : new Date().toISOString();
+
+        await fetch('/api/memos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            title, 
+            content, 
+            userId,
+            createdAt // ★ここを追加しました！これで指定した日付が送られます
+          }),
+        });
       }
+
+      // 保存後はリストを最新にして、完了アラート
+      await fetchMemos(userId);
+      alert('保存しました');
+      
+      if (!selectedId) {
+        handleCreateNew();
+      }
+    } catch (error) {
+      console.error("Failed to save", error);
+      alert('保存に失敗しました');
     }
-    // リストを最新にする
-    await fetchMemos(userId);
-    // 新規作成だった場合、入力内容はそのまま維持するか、クリアするか。
-    // 今回は「保存した感」を出すためそのままでOK
-    alert('保存しました');
   };
 
-  // 削除処理
   const handleDelete = async () => {
     if (!selectedId) return;
     if (!confirm('削除しますか？')) return;
 
-    await fetch(`/api/memos/${selectedId}`, { method: 'DELETE' });
-    
-    // リスト更新＆新規作成モードへ戻る
-    await fetchMemos(userId!);
-    handleCreateNew(); 
+    try {
+      await fetch(`/api/memos/${selectedId}`, { method: 'DELETE' });
+      if (userId) await fetchMemos(userId);
+      handleCreateNew(); 
+    } catch (error) {
+      console.error("Failed to delete", error);
+    }
   };
 
-  // --- UI操作 ---
-  
-  // サイドバーでメモを選択した時
   const handleSelectMemo = (memo: Memo) => {
     setSelectedId(memo.id);
     setTitle(memo.title);
     setContent(memo.content);
-    setIsPreview(false); // 編集モードに戻す
+    setIsPreview(false);
+    setTargetDate(null); // 既存メモ選択時は日付指定をリセット
   };
 
-  // 「＋新規」ボタンを押した時
   const handleCreateNew = () => {
-    setSelectedId(null); // IDをnullに＝新規モード
+    setSelectedId(null);
     setTitle('');
     setContent('');
     setIsPreview(false);
-    // スマホならサイドバーを閉じる
+    setTargetDate(null); // 通常の新規作成は日付指定なし
+    if (window.innerWidth < 768) setIsNavOpen(false);
+  };
+
+  // ★追加: カレンダーから日付指定で新規作成を開始する関数
+  const handleCreateForDate = (date: Date) => {
+    setSelectedId(null);
+    // 日付と時刻を合わせる（例えばその日の朝9時などにするか、現在はクリックした瞬間の時刻にするか）
+    // ここでは日付情報はそのまま保持し、時刻は現在の時刻を混ぜるか、シンプルに00:00にするか等選べます
+    // 今回は「日付」が重要なので、渡されたdateをそのまま使います
+    setTargetDate(date);
+    
+    // フォームをリセットしてエディタへ
+    setTitle('');
+    setContent('');
+    setIsPreview(false);
+    
+    // サイドバーを閉じる（スマホの場合）
     if (window.innerWidth < 768) setIsNavOpen(false);
   };
 
   return (
     <div className={styles.appContainer}>
       
-      {/* 1. 左側: サイドバー */}
       <MemoSidebar
         isOpen={isNavOpen}
         onClose={() => setIsNavOpen(false)}
@@ -135,12 +171,13 @@ export default function Home() {
         currentMemoId={selectedId}
         onSelect={handleSelectMemo}
         onCreateNew={handleCreateNew}
+        onOpenCalendar={() => setIsCalendarOpen(true)}
       />
 
-      {/* 2. 右側: メインエリア（ヘッダー ＋ エディタ） */}
       <div className={styles.mainArea}>
         
         <MemoHeader
+          // ★日付指定モードならタイトル入力欄にプレースホルダーで日付を出すなどの工夫も可能
           title={title}
           setTitle={setTitle}
           onToggleNav={() => setIsNavOpen(!isNavOpen)}
@@ -148,8 +185,17 @@ export default function Home() {
           onDelete={selectedId ? handleDelete : undefined}
           isPreview={isPreview}
           setIsPreview={setIsPreview}
-          showEditorControls={true} // 常時エディタUIを表示
+          showEditorControls={true}
         />
+
+        {/* ★日付指定モードの時、エディタの上に「2025/12/25 の予定を作成中」などを出すと親切です 
+           （任意実装）
+        */}
+        {targetDate && !selectedId && (
+          <div style={{ padding: '10px 30px', background: '#e6f7ff', color: '#0070f3', fontSize: '0.9rem' }}>
+            📅 <b>{targetDate.toLocaleDateString()}</b> のメモを作成中
+          </div>
+        )}
 
         <main className={styles.editorBody}>
           {isPreview ? (
@@ -167,8 +213,16 @@ export default function Home() {
             />
           )}
         </main>
-
       </div>
+
+      <CalendarModal 
+        isOpen={isCalendarOpen} 
+        onClose={() => setIsCalendarOpen(false)}
+        memos={memos}
+        onSelectMemo={handleSelectMemo}
+        // ★追加: 関数を渡す
+        onCreateForDate={handleCreateForDate}
+      />
     </div>
   );
 }
