@@ -1,40 +1,66 @@
+// src/app/api/memos/[id]/route.ts
+
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
+// ↓ params の型定義を Promise にする必要があります
 
-// 削除 (DELETE)
-export async function DELETE(
+export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // ★変更
 ) {
+  const { id } = await params; // ★必ず await する
+
   try {
-    const id = params.id;
-    await prisma.memo.delete({
+    const memo = await prisma.memo.findUnique({
       where: { id },
     });
-    return NextResponse.json({ message: 'Deleted' });
+    return NextResponse.json(memo);
   } catch (error) {
-    return NextResponse.json({ error: 'Error deleting memo' }, { status: 500 });
+    return NextResponse.json({ error: 'Error fetching memo' }, { status: 500 });
   }
 }
 
-// 編集 (PUT)
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // ★変更
 ) {
-  try {
-    const id = params.id;
-    const body = await request.json();
-    const { title, content } = body;
+  const { id } = await params; // ★必ず await する
 
-    const updatedMemo = await prisma.memo.update({
+  try {
+    const body = await request.json();
+    const { title, content, isSchedule, createdAt } = body;
+
+    const memo = await prisma.memo.update({
       where: { id },
-      data: { title, content },
+      data: {
+        title,
+        content,
+        // ここで isSchedule を更新・維持する
+        isSchedule: isSchedule, 
+        createdAt: createdAt ? new Date(createdAt) : undefined,
+      },
     });
-    return NextResponse.json(updatedMemo);
+
+    return NextResponse.json(memo);
   } catch (error) {
+    console.error(error); // エラーログを出す
     return NextResponse.json({ error: 'Error updating memo' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> } // ★変更
+) {
+  const { id } = await params; // ★必ず await する
+
+  try {
+    await prisma.memo.delete({
+      where: { id },
+    });
+    return NextResponse.json({ message: 'Deleted successfully' });
+  } catch (error) {
+    return NextResponse.json({ error: 'Error deleting memo' }, { status: 500 });
   }
 }

@@ -3,28 +3,31 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-// 既存のUserモデルに memos を追加
+// 既存のUserモデル
 model User {
   id       String @id @default(uuid())
   email    String @unique
   username String?
   password String
-  // ▼ 追加: ユーザーが作成したメモのリスト
+  // ユーザーが作成したメモのリスト
   memos    Memo[]
 }
 
-// ▼ 追加: メモのモデル
+// ▼ 修正: メモのモデル
 model Memo {
   id        String   @id @default(uuid())
   title     String
   content   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // ★ 追加: これが予定かどうかを判定するフラグ（デフォルトはfalse）
+  isSchedule Boolean @default(false)
 
   // 誰のメモか紐付ける設定
   userId    String

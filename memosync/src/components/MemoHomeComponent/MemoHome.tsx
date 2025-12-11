@@ -70,50 +70,68 @@ export default function Home() {
     }
   };
 
+  
+
   // ★修正: 保存処理
  // 保存処理
+// Home.tsx
+
+// ... (前略)
+
   const handleSave = async () => {
     if (!userId) return;
 
     try {
+      // ★修正: 「予定(isSchedule)」かどうかを判定するロジック
+      let isSchedule = false;
+
+      if (targetDate) {
+        // 今日の0時0分0秒を取得
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // ターゲット日付の0時0分0秒を取得（コピーして操作）
+        const target = new Date(targetDate);
+        target.setHours(0, 0, 0, 0);
+
+        // 「ターゲット日付」が「今日」よりも未来（明日以降）なら予定とする
+        if (target.getTime() > today.getTime()) {
+          isSchedule = true;
+        }
+      }
+
+      // --- 新規作成・更新の共通ボディ ---
+      const baseBody = {
+        title,
+        content,
+        userId,
+        isSchedule, // ★ここで判定結果を入れる
+        // 日付指定があればその日時、なければ現在日時
+        createdAt: targetDate ? targetDate.toISOString() : (selectedId ? undefined : new Date().toISOString()),
+      };
+
       if (selectedId) {
         // 更新 (PUT)
         await fetch(`/api/memos/${selectedId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, content }),
+          body: JSON.stringify(baseBody),
         });
       } else {
-        // --- 新規作成 (POST) ---
-        
-        // ★修正ポイント: targetDateがあればそれを使い、なければ現在時刻を使う
-        const createdAt = targetDate ? targetDate.toISOString() : new Date().toISOString();
-
+        // 新規作成 (POST)
         await fetch('/api/memos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            title, 
-            content, 
-            userId,
-            createdAt // ★ここを追加しました！これで指定した日付が送られます
-          }),
+          body: JSON.stringify(baseBody),
         });
       }
 
-      // 保存後はリストを最新にして、完了アラート
-      await fetchMemos(userId);
-      alert('保存しました');
-      
-      if (!selectedId) {
-        handleCreateNew();
-      }
+      // ... (後略: リスト更新やアラートなど)
     } catch (error) {
       console.error("Failed to save", error);
       alert('保存に失敗しました');
     }
   };
-
   const handleDelete = async () => {
     if (!selectedId) return;
     if (!confirm('削除しますか？')) return;

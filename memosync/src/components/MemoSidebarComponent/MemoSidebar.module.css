@@ -2,22 +2,16 @@
 .sidebar {
   background-color: #f9f9f9;
   display: flex;
-  flex-direction: column; /* 縦並び */
-  height: 100%;           /* 画面の高さいっぱい */
+  flex-direction: column;
+  height: 100%;
   z-index: 100;
-  
-  /* ★重要: 閉じた時に中身がはみ出さないように隠す */
-  overflow: hidden;    
-  white-space: nowrap; /* 閉じるアニメーション中に文字が改行されるのを防ぐ */
-
-  /* スマホ用の初期位置（画面外） */
+  overflow: hidden;
+  white-space: nowrap;
   position: fixed;
   top: 0; left: 0;
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   border-right: 1px solid #ddd;
-  
-  /* 重要: 幅を固定しないと潰れることがあります */
   width: 280px;
   max-width: 80vw;
 }
@@ -26,7 +20,7 @@
   transform: translateX(0);
 }
 
-/* --- ヘッダーエリア（高さ固定） --- */
+/* --- ヘッダーエリア --- */
 .header {
   padding: 15px;
   border-bottom: 1px solid #e0e0e0;
@@ -34,8 +28,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
-  /* ★重要: ヘッダーが縮まないようにする */
   flex-shrink: 0;
   min-height: 60px;
 }
@@ -53,13 +45,13 @@
   align-items: center;
 }
 
-/* --- リストエリア（残りの高さ全部） --- */
+/* --- リストエリア --- */
 .listContainer {
-  flex: 1;            /* ★重要: 残りのスペースを埋める */
-  overflow-y: auto;   /* スクロール有効化 */
+  flex: 1;
+  overflow-y: auto;
   background-color: #fff;
-  position: relative; 
-  width: 280px;       /* 幅が変わらないように固定 */
+  position: relative;
+  width: 280px;
 }
 
 .list {
@@ -69,14 +61,37 @@
   width: 100%;
 }
 
+/* セクション見出し */
+.sectionHeader {
+  background-color: #f4f4f5;
+  color: #52525b;
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 8px 15px;
+  border-bottom: 1px solid #e4e4e7;
+  border-top: 1px solid #e4e4e7;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* アイテム本体 */
 .item {
   padding: 12px 15px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
+  background-color: #fff;
   transition: background 0.2s;
+  display: block; /* li要素用 */
 }
+
 .item:hover { background-color: #f5f5f5; }
-.activeItem { background-color: #e6f7ff; border-left: 4px solid #0070f3; padding-left: 11px; }
+
+.activeItem { 
+  background-color: #e6f7ff !important;
+  border-left: 4px solid #0070f3; 
+  padding-left: 11px; 
+}
 
 /* アイテムの中身 */
 .itemContent {
@@ -102,7 +117,7 @@
 
 .emptyItem { padding: 20px; text-align: center; color: #aaa; }
 
-/* ボタンのデザイン */
+/* ボタン類 */
 .iconButton {
   background: #fff;
   border: 1px solid #ddd;
@@ -121,7 +136,7 @@
   display: flex; align-items: center;
 }
 
-/* --- 暗幕（スマホ用） --- */
+/* オーバーレイ */
 .overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background-color: rgba(0, 0, 0, 0.4);
@@ -130,20 +145,20 @@
 }
 .overlayOpen { opacity: 1; visibility: visible; }
 
-/* --- PC表示の調整（幅768px以上） --- */
+/* PC表示 */
 @media (min-width: 768px) {
   .overlay { display: none; } 
 
   .sidebar {
     position: relative;
     transform: none;
-    width: 0; /* ★重要: 閉じた状態は幅0 */
+    width: 0;
     border-right: none;
     transition: width 0.3s ease;
   }
   
   .sidebarOpen {
-    width: 280px; /* ★重要: 開いた状態 */
+    width: 280px;
     border-right: 1px solid #ddd;
   }
 }

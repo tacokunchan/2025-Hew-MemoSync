@@ -23,10 +23,10 @@ type Props = {
   onCreateForDate: (date: Date) => void;
 };
 
-export default function CalendarModal({ 
-  isOpen, 
-  onClose, 
-  memos, 
+export default function CalendarModal({
+  isOpen,
+  onClose,
+  memos,
   onSelectMemo,
   onCreateForDate
 }: Props) {
@@ -73,7 +73,7 @@ export default function CalendarModal({
       memoDate.getDate() === selectedDate.getDate()
     );
   });
-  
+
   const handleCreateClick = () => {
     onCreateForDate(selectedDate);
     onClose();
@@ -82,13 +82,13 @@ export default function CalendarModal({
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        
+
         {/* ヘッダー */}
         <div className={styles.header}>
           <h2>📅 メモカレンダー</h2>
           <button onClick={onClose} className={styles.closeButton}>×</button>
         </div>
-        
+
         {/* カレンダー本体エリア */}
         <div className={styles.calendarWrapper}>
           <Calendar
@@ -97,8 +97,7 @@ export default function CalendarModal({
             tileContent={getTileContent}
             locale="ja-JP"
             className={styles.customCalendar}
-            /* 翌月の日付を表示しない設定（スッキリさせるため） */
-            showNeighboringMonth={false}
+            showNeighboringMonth={true}
           />
         </div>
 
@@ -120,7 +119,7 @@ export default function CalendarModal({
                   <li key={memo.id} onClick={() => { onSelectMemo(memo); onClose(); }}>
                     <span className={styles.listMemoTitle}>{memo.title || '無題'}</span>
                     <span className={styles.memoTime}>
-                      {new Date(memo.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      {new Date(memo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </li>
                 ))}
