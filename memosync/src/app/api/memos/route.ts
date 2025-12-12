@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { title, content, userId, createdAt, isSchedule } = body; // ★createdAt, isScheduleを受け取る
+  const { title, content, userId, createdAt, isSchedule, color, category } = body; // ★createdAt, isSchedule, color, categoryを受け取る
 
   const memo = await prisma.memo.create({
     data: {
@@ -36,6 +36,8 @@ export async function POST(req: Request) {
       content,
       userId,
       isSchedule: isSchedule ?? false, // isScheduleがあれば使い、なければfalse
+      color,
+      category,
       // ★ここが重要！送られてきたcreatedAtがあれば使い、なければ現在時刻(now)にする
       createdAt: createdAt ? new Date(createdAt) : new Date(),
     },

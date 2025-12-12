@@ -18,22 +18,27 @@ type Memo = {
   updatedAt?: string;
   createdAt: string;
   isSchedule?: boolean;
+  color?: string;
+  category?: string;
 };
 
 export default function Home() {
   const router = useRouter();
-  
+
   const [userId, setUserId] = useState<string | null>(null);
   const [memos, setMemos] = useState<Memo[]>([]);
-  
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  
+
   // ★重要: これが入っているときは「予定作成モード」とする
   const [targetDate, setTargetDate] = useState<Date | null>(null);
-  
+
+  const [color, setColor] = useState<string>('blue'); // Default color for plans
+  const [category, setCategory] = useState<string>('なし'); // Default category for memos
+
   const [isNavOpen, setIsNavOpen] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -66,7 +71,6 @@ export default function Home() {
       const res = await fetch(`/api/memos?userId=${uid}`);
       if (res.ok) {
         const data: Memo[] = await res.json();
-        // 更新日順にソート
         const sortedData = data.sort((a, b) => {
           const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
           const dateB = new Date(b.createdAt || b.updatedAt || 0).getTime();
@@ -88,11 +92,11 @@ export default function Home() {
       prevMemos.map((memo) =>
         memo.id === selectedId
           ? {
-              ...memo,
-              title: title || memo.title,
-              content: content,
-              updatedAt: new Date().toISOString(),
-            }
+            ...memo,
+            title: title || memo.title,
+            content: content,
+            updatedAt: new Date().toISOString(),
+          }
           : memo
       )
     );
@@ -105,7 +109,7 @@ export default function Home() {
     if (!userId) return;
 
     const timer = setTimeout(async () => {
-      
+
       // ★サーバーへのfetchは行わず、手元のmemosから現在の情報を取得
       const currentMemo = memos.find(m => m.id === selectedId);
       if (!currentMemo) return; // 手元にない場合はスキップ
@@ -139,7 +143,7 @@ export default function Home() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [title, content, selectedId, userId, memos]); 
+  }, [title, content, selectedId, userId, memos]);
 
   // ★手動保存ロジック（修正版）
   const handleSave = async () => {
@@ -160,10 +164,12 @@ export default function Home() {
             content,
             userId,
             isSchedule: currentMemo.isSchedule ?? false, // 状態維持
+            color,
+            category,
             createdAt: currentMemo.createdAt,
           }),
         });
-        
+
         if (res.ok) {
           const savedMemo: Memo = await res.json();
           setMemos((prevMemos) =>
@@ -185,16 +191,18 @@ export default function Home() {
             title,
             content,
             userId,
-            isSchedule, 
+            isSchedule,
+            color,
+            category,
             createdAt: targetDate ? targetDate.toISOString() : new Date().toISOString(),
           }),
         });
-        
+
         if (res.ok) {
           const newMemo: Memo = await res.json();
           setMemos((prevMemos) => [newMemo, ...prevMemos]);
           setSelectedId(newMemo.id);
-          
+
           if (isSchedule) {
             alert('カレンダーに予定を追加しました');
             // 予定作成後は、混乱を防ぐためメモ作成モード（リセット）に戻す
@@ -229,6 +237,8 @@ export default function Home() {
     setSelectedId(memo.id);
     setTitle(memo.title);
     setContent(memo.content);
+    setColor(memo.color || 'blue');
+    setCategory(memo.category || 'なし');
     setIsPreview(false);
     // ★既存のものを開くときは日付指定モードを解除
     setTargetDate(null);
@@ -240,6 +250,8 @@ export default function Home() {
     setSelectedId(null);
     setTitle('');
     setContent('');
+    setColor('blue');
+    setCategory('なし');
     setIsPreview(false);
     // ★日付指定を解除＝メモモード
     setTargetDate(null);
@@ -251,11 +263,14 @@ export default function Home() {
     console.log('📅 Create new schedule for:', date);
     setSelectedId(null);
     // ★日付を指定＝予定モード
+    // ★日付を指定＝予定モード
     setTargetDate(date);
     setTitle('');
     setContent('');
+    setColor('blue');
+    setCategory('なし');
     setIsPreview(false);
-    
+
     // カレンダーを閉じる
     setIsCalendarOpen(false);
     if (window.innerWidth < 768) setIsNavOpen(false);
@@ -263,7 +278,7 @@ export default function Home() {
 
   return (
     <div className={styles.appContainer}>
-      
+
       <MemoSidebar
         isOpen={isNavOpen}
         onClose={() => setIsNavOpen(false)}
@@ -275,7 +290,7 @@ export default function Home() {
       />
 
       <div className={styles.mainArea}>
-        
+
         <MemoHeader
           title={title}
           setTitle={setTitle}
@@ -291,6 +306,52 @@ export default function Home() {
         {targetDate && !selectedId && (
           <div style={{ padding: '10px 30px', background: '#e6f7ff', color: '#0070f3', fontSize: '0.9rem' }}>
             📅 <b>{targetDate.toLocaleDateString()}</b> の予定を作成中
+          </div>
+        )}
+
+        {/* 色選択（予定の場合） */}
+        {targetDate && (
+          <div style={{ padding: '0 30px 10px 30px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.9rem', color: '#666' }}>色:</span>
+            {['red', 'blue', 'green', 'purple', 'pink'].map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  backgroundColor: c === 'red' ? '#ffcccc' : c === 'blue' ? '#cceeff' : c === 'green' ? '#ccffcc' : c === 'purple' ? '#eeccee' : '#ffccee',
+                  border: color === c ? `2px solid ${c}` : '1px solid #ddd',
+                  cursor: 'pointer',
+                }}
+                title={c}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* カテゴリ選択（メモの場合） */}
+        {!targetDate && (
+          <div style={{ padding: '0 30px 10px 30px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.9rem', color: '#666' }}>カテゴリ:</span>
+            {['なし', '重要', '課題', 'アイデア', 'その他'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '12px',
+                  border: '1px solid #ddd',
+                  backgroundColor: category === cat ? '#333' : '#f5f5f5',
+                  color: category === cat ? '#fff' : '#333',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         )}
 
@@ -312,8 +373,8 @@ export default function Home() {
         </main>
       </div>
 
-      <CalendarModal 
-        isOpen={isCalendarOpen} 
+      <CalendarModal
+        isOpen={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
         memos={memos}
         onSelectMemo={handleSelectMemo}

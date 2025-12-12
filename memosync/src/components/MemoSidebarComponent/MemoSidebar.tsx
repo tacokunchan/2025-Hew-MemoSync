@@ -11,6 +11,7 @@ type Memo = {
   updatedAt?: string;
   createdAt: string;
   isSchedule?: boolean;
+  category?: string;
 };
 
 type Props = {
@@ -21,7 +22,7 @@ type Props = {
   onSelect: (memo: Memo) => void;
   onCreateNew: () => void;
   onOpenCalendar: () => void;
-  onDelete?: (id: string) => void; 
+  onDelete?: (id: string) => void;
 };
 
 export default function MemoSidebar({
@@ -44,7 +45,7 @@ export default function MemoSidebar({
   // メモ一覧用のデータ処理
   // isScheduleが true のものは除外し、残った「メモ」のみを更新日順にソート
   const memoList = memos
-    .filter((m) => !m.isSchedule) 
+    .filter((m) => !m.isSchedule)
     .sort((a, b) => {
       const dateA = new Date(a.updatedAt || a.createdAt).getTime();
       const dateB = new Date(b.updatedAt || b.createdAt).getTime();
@@ -64,9 +65,16 @@ export default function MemoSidebar({
     >
       <div className={styles.itemContent}>
         <span className={styles.itemTitle}>{memo.title || '無題のメモ'}</span>
-        <span className={styles.itemDate}>
-          {new Date(memo.updatedAt || memo.createdAt || Date.now()).toLocaleDateString()}
-        </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <span className={styles.itemDate}>
+            {new Date(memo.updatedAt || memo.createdAt).toLocaleDateString()}
+          </span>
+          {memo.category && memo.category !== 'なし' && (
+            <span style={{ fontSize: '0.7rem', backgroundColor: '#eee', padding: '2px 6px', borderRadius: '8px' }}>
+              {memo.category}
+            </span>
+          )}
+        </div>
       </div>
     </motion.li>
   );
@@ -79,7 +87,7 @@ export default function MemoSidebar({
       />
 
       <nav className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
-        
+
         <div className={styles.header}>
           <h2>メモ一覧</h2>
           <div className={styles.headerButtons}>
@@ -87,24 +95,24 @@ export default function MemoSidebar({
             <button onClick={onOpenCalendar} className={styles.iconButton} title="カレンダー">
               📅
             </button>
-            
+
             {/* 新規メモ作成ボタン */}
-            <button 
-              onClick={() => { 
-                onCreateNew(); 
-                if(window.innerWidth < 768) onClose(); 
-              }} 
+            <button
+              onClick={() => {
+                onCreateNew();
+                if (window.innerWidth < 768) onClose();
+              }}
               className={styles.newButton}
             >
               ＋ 新規
             </button>
           </div>
         </div>
-        
+
         <div className={styles.listContainer}>
           <ul className={styles.list}>
             <AnimatePresence mode='popLayout'>
-              
+
               {memoList.map(renderMemoItem)}
 
               {memoList.length === 0 && (

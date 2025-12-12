@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import styles from './CalendarModal.module.css';
 
@@ -14,6 +14,7 @@ type Memo = {
   content: string;
   createdAt: string;
   isSchedule?: boolean;
+  color?: string;
 };
 
 type Props = {
@@ -31,9 +32,13 @@ export default function CalendarModal({
   onSelectMemo,
   onCreateForDate
 }: Props) {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setSelectedDate(new Date());
+  }, []);
+
+  if (!isOpen || !selectedDate) return null;
 
   // タイルごとのコンテンツ描画
   const getTileContent = ({ date, view }: { date: Date; view: string }) => {
@@ -53,7 +58,22 @@ export default function CalendarModal({
           {dayMemos.slice(0, 3).map((memo) => (
             <div
               key={memo.id}
-              className={memo.isSchedule ? styles.tileScheduleTitle : styles.tileMemoTitle}
+              className={styles.tileMemoTitle}
+              style={{
+                backgroundColor: memo.color === 'red' ? '#ffcccc' :
+                  memo.color === 'blue' ? '#cceeff' :
+                    memo.color === 'green' ? '#ccffcc' :
+                      memo.color === 'purple' ? '#eeccee' :
+                        memo.color === 'pink' ? '#ffccee' : '#e6f7ff',
+                color: '#333',
+                fontSize: '0.7rem',
+                padding: '1px 3px',
+                borderRadius: '4px',
+                marginBottom: '2px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}
             >
               {memo.title || '無題'}
             </div>

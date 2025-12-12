@@ -29,6 +29,11 @@ model Memo {
   // ★ 追加: これが予定かどうかを判定するフラグ（デフォルトはfalse）
   isSchedule Boolean @default(false)
 
+  // 色（予定用）: 'red', 'blue', 'green', 'purple', 'pink'
+  color     String?
+  // カテゴリ（メモ用）: 'Important', 'Task', etc.
+  category  String?
+
   // 誰のメモか紐付ける設定
   userId    String
   user      User     @relation(fields: [userId], references: [id])
