@@ -22,7 +22,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  
+
   try {
     // リクエストボディのチェック
     const contentType = request.headers.get('content-type');
@@ -63,7 +63,7 @@ export async function PUT(
         createdAt: createdAt ? new Date(createdAt) : undefined,
       },
     });
-    
+
     return NextResponse.json(memo);
   } catch (error) {
     console.error('PUT /api/memos/[id] error:', error);
@@ -79,7 +79,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  
+
   try {
     await prisma.memo.delete({
       where: { id },
