@@ -13,6 +13,7 @@ type Memo = {
   title: string;
   content: string;
   createdAt: string;
+  isSchedule?: boolean;
 };
 
 type Props = {
@@ -50,7 +51,10 @@ export default function CalendarModal({
       return (
         <div className={styles.tileContent}>
           {dayMemos.slice(0, 3).map((memo) => (
-            <div key={memo.id} className={styles.tileMemoTitle}>
+            <div
+              key={memo.id}
+              className={memo.isSchedule ? styles.tileScheduleTitle : styles.tileMemoTitle}
+            >
               {memo.title || '無題'}
             </div>
           ))}

@@ -199,6 +199,19 @@
   font-weight: 500;
 }
 
+.tileScheduleTitle {
+  font-size: 0.7rem;
+  color: #15803d; /* 濃い緑文字 */
+  background-color: #dcfce7; /* 薄い緑背景 */
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  font-weight: 500;
+}
+
 .moreCount {
   font-size: 0.7rem;
   color: #64748b;
