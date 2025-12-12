@@ -16,7 +16,8 @@ type Memo = {
   title: string;
   content: string;
   updatedAt?: string;
-  createdAt: string; 
+  createdAt: string;
+  isSchedule?: boolean;
 };
 
 export default function Home() {
@@ -27,16 +28,24 @@ export default function Home() {
   
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
-  // エディタの状態
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   
-  // ★追加: 新規作成時のターゲット日付（指定がなければnull）
+  // ★重要: これが入っているときは「予定作成モード」とする
   const [targetDate, setTargetDate] = useState<Date | null>(null);
   
   const [isNavOpen, setIsNavOpen] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  // デバッグ用ログ
+  useEffect(() => {
+    console.log('📊 Memos updated:', {
+      total: memos.length,
+      schedules: memos.filter(m => m.isSchedule).length,
+      normalMemos: memos.filter(m => !m.isSchedule).length
+    });
+  }, [memos]);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -57,11 +66,11 @@ export default function Home() {
       const res = await fetch(`/api/memos?userId=${uid}`);
       if (res.ok) {
         const data: Memo[] = await res.json();
-        // 作成日時の新しい順に並び替え
+        // 更新日順にソート
         const sortedData = data.sort((a, b) => {
           const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
           const dateB = new Date(b.createdAt || b.updatedAt || 0).getTime();
-          return dateB - dateA; // 降順
+          return dateB - dateA;
         });
         setMemos(sortedData);
       }
@@ -70,112 +79,185 @@ export default function Home() {
     }
   };
 
-  
+  // リアルタイム反映（楽観的UI更新）
+  useEffect(() => {
+    if (!selectedId) return;
+    if (!title && !content) return;
 
-  // ★修正: 保存処理
- // 保存処理
-// Home.tsx
+    setMemos((prevMemos) =>
+      prevMemos.map((memo) =>
+        memo.id === selectedId
+          ? {
+              ...memo,
+              title: title || memo.title,
+              content: content,
+              updatedAt: new Date().toISOString(),
+            }
+          : memo
+      )
+    );
+  }, [title, content, selectedId]);
 
-// ... (前略)
+  // ★自動保存ロジック（修正版）
+  useEffect(() => {
+    if (!selectedId) return;
+    if (!title && !content) return;
+    if (!userId) return;
 
+    const timer = setTimeout(async () => {
+      
+      // ★サーバーへのfetchは行わず、手元のmemosから現在の情報を取得
+      const currentMemo = memos.find(m => m.id === selectedId);
+      if (!currentMemo) return; // 手元にない場合はスキップ
+
+      try {
+        const res = await fetch(`/api/memos/${selectedId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            content,
+            userId,
+            // ★手元のデータの状態（メモor予定）を維持する
+            isSchedule: currentMemo.isSchedule ?? false,
+            createdAt: currentMemo.createdAt,
+          }),
+        });
+
+        if (res.ok) {
+          const savedMemo: Memo = await res.json();
+          // 保存完了したデータでStateを更新（整合性を保つ）
+          setMemos((prevMemos) =>
+            prevMemos.map((memo) =>
+              memo.id === savedMemo.id ? savedMemo : memo
+            )
+          );
+        }
+      } catch (error) {
+        console.error("❌ Auto-save failed", error);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [title, content, selectedId, userId, memos]); 
+
+  // ★手動保存ロジック（修正版）
   const handleSave = async () => {
     if (!userId) return;
 
     try {
-      // ★修正: 「予定(isSchedule)」かどうかを判定するロジック
-      let isSchedule = false;
-
-      if (targetDate) {
-        // 今日の0時0分0秒を取得
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // ターゲット日付の0時0分0秒を取得（コピーして操作）
-        const target = new Date(targetDate);
-        target.setHours(0, 0, 0, 0);
-
-        // 「ターゲット日付」が「今日」よりも未来（明日以降）なら予定とする
-        if (target.getTime() > today.getTime()) {
-          isSchedule = true;
-        }
-      }
-
-      // --- 新規作成・更新の共通ボディ ---
-      const baseBody = {
-        title,
-        content,
-        userId,
-        isSchedule, // ★ここで判定結果を入れる
-        // 日付指定があればその日時、なければ現在日時
-        createdAt: targetDate ? targetDate.toISOString() : (selectedId ? undefined : new Date().toISOString()),
-      };
-
       if (selectedId) {
-        // 更新 (PUT)
-        await fetch(`/api/memos/${selectedId}`, {
+        // ■ 既存データの更新
+        // 手元のデータから現在のisScheduleを取得
+        const currentMemo = memos.find(m => m.id === selectedId);
+        if (!currentMemo) return;
+
+        const res = await fetch(`/api/memos/${selectedId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(baseBody),
+          body: JSON.stringify({
+            title,
+            content,
+            userId,
+            isSchedule: currentMemo.isSchedule ?? false, // 状態維持
+            createdAt: currentMemo.createdAt,
+          }),
         });
+        
+        if (res.ok) {
+          const savedMemo: Memo = await res.json();
+          setMemos((prevMemos) =>
+            prevMemos.map((memo) =>
+              memo.id === savedMemo.id ? savedMemo : memo
+            )
+          );
+        }
       } else {
-        // 新規作成 (POST)
-        await fetch('/api/memos', {
+        // ■ 新規作成
+        // targetDate がセットされているなら「予定」、なければ「メモ」
+        const isSchedule = targetDate !== null;
+        console.log('Creating new:', { isSchedule, targetDate });
+
+        const res = await fetch('/api/memos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(baseBody),
+          body: JSON.stringify({
+            title,
+            content,
+            userId,
+            isSchedule, 
+            createdAt: targetDate ? targetDate.toISOString() : new Date().toISOString(),
+          }),
         });
+        
+        if (res.ok) {
+          const newMemo: Memo = await res.json();
+          setMemos((prevMemos) => [newMemo, ...prevMemos]);
+          setSelectedId(newMemo.id);
+          
+          if (isSchedule) {
+            alert('カレンダーに予定を追加しました');
+            // 予定作成後は、混乱を防ぐためメモ作成モード（リセット）に戻す
+            handleCreateNew();
+          } else {
+            alert('メモを作成しました');
+          }
+        }
       }
-
-      // ... (後略: リスト更新やアラートなど)
     } catch (error) {
       console.error("Failed to save", error);
       alert('保存に失敗しました');
     }
   };
+
   const handleDelete = async () => {
     if (!selectedId) return;
     if (!confirm('削除しますか？')) return;
 
     try {
       await fetch(`/api/memos/${selectedId}`, { method: 'DELETE' });
-      if (userId) await fetchMemos(userId);
-      handleCreateNew(); 
+      setMemos((prevMemos) => prevMemos.filter((memo) => memo.id !== selectedId));
+      handleCreateNew();
     } catch (error) {
       console.error("Failed to delete", error);
     }
   };
 
+  // メモ選択時の処理
   const handleSelectMemo = (memo: Memo) => {
+    console.log('📝 Selected memo:', memo);
     setSelectedId(memo.id);
     setTitle(memo.title);
     setContent(memo.content);
     setIsPreview(false);
-    setTargetDate(null); // 既存メモ選択時は日付指定をリセット
+    // ★既存のものを開くときは日付指定モードを解除
+    setTargetDate(null);
   };
 
+  // 「＋新規」ボタン（メモ作成）
   const handleCreateNew = () => {
+    console.log('➕ Create new memo (not schedule)');
     setSelectedId(null);
     setTitle('');
     setContent('');
     setIsPreview(false);
-    setTargetDate(null); // 通常の新規作成は日付指定なし
+    // ★日付指定を解除＝メモモード
+    setTargetDate(null);
     if (window.innerWidth < 768) setIsNavOpen(false);
   };
 
-  // ★追加: カレンダーから日付指定で新規作成を開始する関数
+  // カレンダーから日付をクリックした時（予定作成）
   const handleCreateForDate = (date: Date) => {
+    console.log('📅 Create new schedule for:', date);
     setSelectedId(null);
-    // 日付と時刻を合わせる（例えばその日の朝9時などにするか、現在はクリックした瞬間の時刻にするか）
-    // ここでは日付情報はそのまま保持し、時刻は現在の時刻を混ぜるか、シンプルに00:00にするか等選べます
-    // 今回は「日付」が重要なので、渡されたdateをそのまま使います
+    // ★日付を指定＝予定モード
     setTargetDate(date);
-    
-    // フォームをリセットしてエディタへ
     setTitle('');
     setContent('');
     setIsPreview(false);
     
-    // サイドバーを閉じる（スマホの場合）
+    // カレンダーを閉じる
+    setIsCalendarOpen(false);
     if (window.innerWidth < 768) setIsNavOpen(false);
   };
 
@@ -195,7 +277,6 @@ export default function Home() {
       <div className={styles.mainArea}>
         
         <MemoHeader
-          // ★日付指定モードならタイトル入力欄にプレースホルダーで日付を出すなどの工夫も可能
           title={title}
           setTitle={setTitle}
           onToggleNav={() => setIsNavOpen(!isNavOpen)}
@@ -206,12 +287,10 @@ export default function Home() {
           showEditorControls={true}
         />
 
-        {/* ★日付指定モードの時、エディタの上に「2025/12/25 の予定を作成中」などを出すと親切です 
-           （任意実装）
-        */}
+        {/* ユーザーへの現在のモード表示 */}
         {targetDate && !selectedId && (
           <div style={{ padding: '10px 30px', background: '#e6f7ff', color: '#0070f3', fontSize: '0.9rem' }}>
-            📅 <b>{targetDate.toLocaleDateString()}</b> のメモを作成中
+            📅 <b>{targetDate.toLocaleDateString()}</b> の予定を作成中
           </div>
         )}
 
@@ -238,7 +317,6 @@ export default function Home() {
         onClose={() => setIsCalendarOpen(false)}
         memos={memos}
         onSelectMemo={handleSelectMemo}
-        // ★追加: 関数を渡す
         onCreateForDate={handleCreateForDate}
       />
     </div>
