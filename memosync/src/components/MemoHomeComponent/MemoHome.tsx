@@ -11,6 +11,7 @@ import CalendarModal from '@/components/CalendarModalComponent/CalendarModal';
 
 import styles from './MemoHome.module.css';
 
+
 type Memo = {
   id: string;
   title: string;
@@ -55,7 +56,7 @@ export default function Home() {
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     if (!storedUserId) {
-      router.push('/components/LogInComponent/LogIn');
+      router.push('/LogIn'); // パス修正: 一般的なパスに変更
       return;
     }
     setUserId(storedUserId);
@@ -109,7 +110,6 @@ export default function Home() {
     if (!userId) return;
 
     const timer = setTimeout(async () => {
-
       // ★サーバーへのfetchは行わず、手元のmemosから現在の情報を取得
       const currentMemo = memos.find(m => m.id === selectedId);
       if (!currentMemo) return; // 手元にない場合はスキップ
@@ -180,7 +180,6 @@ export default function Home() {
         }
       } else {
         // ■ 新規作成
-        // targetDate がセットされているなら「予定」、なければ「メモ」
         const isSchedule = targetDate !== null;
         console.log('Creating new:', { isSchedule, targetDate });
 
@@ -205,7 +204,6 @@ export default function Home() {
 
           if (isSchedule) {
             alert('カレンダーに予定を追加しました');
-            // 予定作成後は、混乱を防ぐためメモ作成モード（リセット）に戻す
             handleCreateNew();
           } else {
             alert('メモを作成しました');
@@ -240,7 +238,6 @@ export default function Home() {
     setColor(memo.color || 'blue');
     setCategory(memo.category || 'なし');
     setIsPreview(false);
-    // ★既存のものを開くときは日付指定モードを解除
     setTargetDate(null);
   };
 
@@ -253,7 +250,6 @@ export default function Home() {
     setColor('blue');
     setCategory('なし');
     setIsPreview(false);
-    // ★日付指定を解除＝メモモード
     setTargetDate(null);
     if (window.innerWidth < 768) setIsNavOpen(false);
   };
@@ -262,8 +258,6 @@ export default function Home() {
   const handleCreateForDate = (date: Date) => {
     console.log('📅 Create new schedule for:', date);
     setSelectedId(null);
-    // ★日付を指定＝予定モード
-    // ★日付を指定＝予定モード
     setTargetDate(date);
     setTitle('');
     setContent('');
@@ -271,7 +265,6 @@ export default function Home() {
     setCategory('なし');
     setIsPreview(false);
 
-    // カレンダーを閉じる
     setIsCalendarOpen(false);
     if (window.innerWidth < 768) setIsNavOpen(false);
   };
@@ -304,26 +297,22 @@ export default function Home() {
 
         {/* ユーザーへの現在のモード表示 */}
         {targetDate && !selectedId && (
-          <div style={{ padding: '10px 30px', background: '#e6f7ff', color: '#0070f3', fontSize: '0.9rem' }}>
+          <div className={styles.infoBar}>
             📅 <b>{targetDate.toLocaleDateString()}</b> の予定を作成中
           </div>
         )}
 
         {/* 色選択（予定の場合） */}
         {targetDate && (
-          <div style={{ padding: '0 30px 10px 30px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.9rem', color: '#666' }}>色:</span>
+          <div className={styles.toolbar}>
+            <span className={styles.toolbarLabel}>Color:</span>
             {['red', 'blue', 'green', 'purple', 'pink'].map((c) => (
               <button
                 key={c}
                 onClick={() => setColor(c)}
+                className={`${styles.colorButton} ${color === c ? styles.colorButtonSelected : ''}`}
                 style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
                   backgroundColor: c === 'red' ? '#ffcccc' : c === 'blue' ? '#cceeff' : c === 'green' ? '#ccffcc' : c === 'purple' ? '#eeccee' : '#ffccee',
-                  border: color === c ? `2px solid ${c}` : '1px solid #ddd',
-                  cursor: 'pointer',
                 }}
                 title={c}
               />
@@ -333,21 +322,13 @@ export default function Home() {
 
         {/* カテゴリ選択（メモの場合） */}
         {!targetDate && (
-          <div style={{ padding: '0 30px 10px 30px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.9rem', color: '#666' }}>カテゴリ:</span>
+          <div className={styles.toolbar}>
+            <span className={styles.toolbarLabel}>Category:</span>
             {['なし', '重要', '課題', 'アイデア', 'その他'].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setCategory(cat)}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: '12px',
-                  border: '1px solid #ddd',
-                  backgroundColor: category === cat ? '#333' : '#f5f5f5',
-                  color: category === cat ? '#fff' : '#333',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                }}
+                className={`${styles.categoryChip} ${category === cat ? styles.categoryChipSelected : ''}`}
               >
                 {cat}
               </button>
@@ -365,7 +346,7 @@ export default function Home() {
           ) : (
             <textarea
               className={styles.textArea}
-              placeholder="Markdown形式でメモを入力..."
+              placeholder="ここにメモを入力してください..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />

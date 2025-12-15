@@ -1,49 +1,63 @@
-/* CalendarModal.module.css */
-
-/* --- オーバーレイとモーダル本体 --- */
+/* --- オーバーレイ --- */
 .overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(30, 41, 59, 0.5); /* 少し青みがかったダークグレー */
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.6);
+  /* 白っぽい霧のような背景 */
+  backdrop-filter: blur(4px);
+  z-index: 100;
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 2000;
-  backdrop-filter: blur(4px); /* ブラーを強めて没入感を出す */
-  animation: fadeIn 0.2s ease-out;
+  justify-content: center;
+  padding: 1rem;
 }
 
+/* --- モーダル本体 --- */
 .modal {
-  background: #ffffff;
-  width: 95%;
-  max-width: 900px; /* 少し広げてカレンダーを見やすく */
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 900px;
+  /* 横に広く使えるように */
   height: 85vh;
-  border-radius: 16px; /* 角丸を強調 */
-  padding: 0; /* パディングをリセットし、内部で調整 */
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: 800px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+
+  /* 几帳面な枠線とシャドウ */
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #171717;
+
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* --- ヘッダーエリア --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- ヘッダー --- */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #fff;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .header h2 {
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: #171717;
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -51,282 +65,310 @@
 
 .closeButton {
   background: transparent;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
+  border: 1px solid #e5e5e5;
+  color: #171717;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
   transition: all 0.2s;
 }
 
 .closeButton:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background-color: #171717;
+  color: #ffffff;
+  border-color: #171717;
 }
 
-/* --- カレンダーエリア --- */
-.calendarWrapper {
+/* --- カレンダーとリストのラッパー --- */
+.contentWrapper {
+  display: flex;
   flex: 1;
+  overflow: hidden;
+}
+
+/* --- カレンダーエリア (左側) --- */
+.calendarWrapper {
+  flex: 2;
+  /* 画面幅の2/3を使う */
+  padding: 2rem;
   overflow-y: auto;
-  padding: 20px 24px;
-  background: #f8fafc; /* 背景をわずかにグレーにしてカレンダーを際立たせる */
+  border-right: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
 }
 
+/* --- React Calendar Customization --- */
+/* :global を使ってライブラリのクラスを上書き */
 .customCalendar {
-  width: 100% !important;
-  background: transparent !important;
-  border: none !important;
+  width: 100%;
+  border: none;
   font-family: inherit;
+  background: transparent;
 }
 
-/* react-calendar の上書き */
-:global(.react-calendar__navigation) {
+/* ナビゲーション (年月表示など) */
+.customCalendar :global(.react-calendar__navigation) {
+  display: flex;
+  height: 44px;
   margin-bottom: 1rem;
 }
-:global(.react-calendar__navigation button) {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #334155;
+
+.customCalendar :global(.react-calendar__navigation button) {
   min-width: 44px;
   background: none;
-  border-radius: 8px;
-}
-:global(.react-calendar__navigation button:enabled:hover),
-:global(.react-calendar__navigation button:enabled:focus) {
-  background-color: #e2e8f0;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: #171717;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-:global(.react-calendar__month-view__weekdays) {
+.customCalendar :global(.react-calendar__navigation button:enabled:hover),
+.customCalendar :global(.react-calendar__navigation button:enabled:focus) {
+  background-color: #f5f5f5;
+}
+
+/* 曜日ヘッダー */
+.customCalendar :global(.react-calendar__month-view__weekdays) {
   text-align: center;
   text-transform: uppercase;
   font-weight: 600;
-  font-size: 0.75rem;
-  color: #94a3b8;
-  margin-bottom: 8px;
-}
-:global(.react-calendar__month-view__weekdays__weekday abbr) {
-  text-decoration: none;
+  font-size: 0.7rem;
+  color: #a3a3a3;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-:global(.react-calendar__tile) {
-  height: 90px; /* タイルを少し高く */
+.customCalendar :global(.react-calendar__month-view__weekdays__weekday) {
+  padding: 0.5rem;
+  text-decoration: none;
+  /* デフォルトの下線を消す */
+}
+
+.customCalendar :global(abbr[title]) {
+  text-decoration: none;
+  cursor: default;
+}
+
+/* 日付タイル全体 */
+.customCalendar :global(.react-calendar__tile) {
+  height: 100px;
+  /* 高さを固定してグリッド感を出す */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: stretch; /* 左寄せではなくストレッチさせて幅いっぱいに */
-  padding: 6px !important;
-  background: #fff !important;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px; /* タイル自体も角丸に */
+  align-items: flex-start;
+  padding: 0.5rem;
+  background: none;
+  border: 1px solid #f0f0f0;
+  /* 薄い枠線 */
+  margin: -1px 0 0 -1px;
+  /* 枠線を重ねて1本に見せるテクニック */
   font-size: 0.9rem;
-  overflow: hidden;
+  color: #171717;
+  transition: background-color 0.2s;
   position: relative;
-  transition: transform 0.1s, box-shadow 0.1s;
-  margin-bottom: 6px; /* タイル間に隙間を作る */
-  margin-right: 6px; /* グリッド風に見せるため */
-}
-/* react-calendarのデフォルトCSSによるマージン対策 */
-:global(.react-calendar__month-view__days) {
-  display: grid !important;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px; /* グリッドの隙間 */
-}
-:global(.react-calendar__tile) {
-  margin: 0 !important; /* グリッドgapを使うのでマージン削除 */
-  border: none !important; /* ボーダー削除、影で表現 */
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-:global(.react-calendar__tile:enabled:hover) {
-  background: #fff !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+.customCalendar :global(.react-calendar__tile:enabled:hover),
+.customCalendar :global(.react-calendar__tile:enabled:focus) {
+  background-color: #fafafa;
 }
 
-:global(.react-calendar__month-view__days__day--weekend) {
-  color: #ef4444; /* ソフトな赤 */
+/* 選択中の日付 */
+.customCalendar :global(.react-calendar__tile--active) {
+  background-color: #f5f5f5 !important;
+  /* 薄いグレー */
+  color: #171717;
+  box-shadow: inset 0 0 0 2px #171717;
+  /* 黒い太枠で囲む */
 }
 
-/* 選択中の日付スタイル */
-:global(.react-calendar__tile--active) {
-  background: #eff6ff !important; /* 薄い青 */
-  color: #333 !important;
-  box-shadow: 0 0 0 2px #3b82f6 inset !important; /* 内側に青い枠線 */
+/* 今日の日付 */
+.customCalendar :global(.react-calendar__tile--now) {
+  background-color: #ffffff;
 }
 
-/* 今日の日付スタイル */
-:global(.react-calendar__tile--now) {
-  background: #fff !important;
-}
-/* 今日の日付の数字を丸で囲むための擬似要素テクニックなどはJSX側で制御した方が綺麗なので
-   今回は背景色だけ調整 */
-:global(.react-calendar__tile--now) > abbr {
-  background: #3b82f6;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  display: inline-block;
-  margin-bottom: 2px;
-  align-self: flex-start;
+.customCalendar :global(.react-calendar__tile--now)::after {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 6px;
+  height: 6px;
+  background-color: #171717;
+  border-radius: 50%;
 }
 
-/* コンテンツエリア */
+/* --- タイル内のコンテンツ --- */
 .tileContent {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
 .tileMemoTitle {
-  font-size: 0.7rem;
-  color: #0369a1; /* 濃い青文字 */
-  background-color: #e0f2fe; /* 薄い青背景 */
-  border-radius: 4px;
-  padding: 2px 6px;
+  font-size: 0.65rem;
+  padding: 2px 4px;
+  width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
-  font-weight: 500;
-}
+  background-color: transparent;
 
-.tileScheduleTitle {
-  font-size: 0.7rem;
-  color: #15803d; /* 濃い緑文字 */
-  background-color: #dcfce7; /* 薄い緑背景 */
-  border-radius: 4px;
-  padding: 2px 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
-  font-weight: 500;
+  /* 左側のボーダーで色を表現するスタイル */
+  border-left-width: 3px;
+  border-left-style: solid;
+  /* border-color はインラインスタイルで指定 */
+
+  color: #525252;
+  line-height: 1.2;
 }
 
 .moreCount {
-  font-size: 0.7rem;
-  color: #64748b;
-  text-align: center;
-  background: #f1f5f9;
-  border-radius: 4px;
-  padding: 1px 0;
+  font-size: 0.6rem;
+  color: #a3a3a3;
+  text-align: right;
+  margin-top: 2px;
 }
 
-/* --- 下部のリスト＆ヘッダー --- */
+/* --- リストエリア (右側) --- */
 .memoList {
-  height: 220px;
-  border-top: 1px solid #e2e8f0;
-  background: #fff;
+  flex: 1;
+  /* 画面幅の1/3 */
+  background-color: #fafafa;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid #e5e5e5;
+  /* スマホ表示時は上の線になるようにメディアクエリで調整 */
 }
 
 .listHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 24px;
-  background: #fff;
-  border-bottom: 1px solid #f1f5f9;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+  background-color: #ffffff;
 }
 
 .listHeader h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #334155;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin: 0 0 1rem 0;
+  color: #171717;
 }
 
 .createDateButton {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #171717;
+  color: #ffffff;
+  border: 1px solid #171717;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s;
 }
 
 .createDateButton:hover {
-  background-color: #2563eb;
-  transform: translateY(-1px);
-}
-.createDateButton:active {
-  transform: translateY(0);
+  background-color: #ffffff;
+  color: #171717;
 }
 
 .listContainer {
   flex: 1;
   overflow-y: auto;
-  padding: 0 24px 20px;
+  padding: 0;
 }
 
-.memoList ul {
+.listContainer ul {
   list-style: none;
   padding: 0;
   margin: 0;
-  margin-top: 10px;
 }
 
-.memoList li {
-  padding: 12px 16px;
-  border: 1px solid #f1f5f9;
-  margin-bottom: 8px;
+.listContainer li {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+  background-color: #ffffff;
   cursor: pointer;
+  transition: background-color 0.2s;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 8px;
-  transition: all 0.2s;
-  background: #fff;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.memoList li:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  transform: translateX(4px);
+.listContainer li:hover {
+  background-color: #f0f0f0;
 }
 
 .listMemoTitle {
-  font-weight: 600;
-  color: #334155;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #171717;
 }
 
 .memoTime {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  background: #f1f5f9;
-  padding: 2px 8px;
-  border-radius: 12px;
+  font-size: 0.7rem;
+  color: #a3a3a3;
+  font-family: monospace;
 }
 
 .empty {
-  color: #94a3b8;
+  padding: 3rem 1.5rem;
   text-align: center;
-  padding: 40px;
-  font-size: 0.9rem;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  color: #a3a3a3;
+  font-size: 0.8rem;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* --- レスポンシブ対応 --- */
+@media (max-width: 768px) {
+  .contentWrapper {
+    flex-direction: column;
+  }
+
+  .calendarWrapper {
+    flex: none;
+    height: 55%;
+    /* 上半分 */
+    border-right: none;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 1rem;
+  }
+
+  .memoList {
+    flex: 1;
+    /* 下半分 */
+    border-left: none;
+  }
+
+  .customCalendar :global(.react-calendar__tile) {
+    height: 60px;
+    /* スマホでは高さを縮める */
+    font-size: 0.8rem;
+  }
+
+  /* スマホではメモタイトルを非表示にしてドットだけにする等の調整も可 */
+  .tileMemoTitle {
+    display: none;
+    /* 狭いので隠す */
+  }
+
+  /* 代わりにドットを表示 */
+  .tileContent::after {
+    content: '•';
+    color: #171717;
+    font-size: 1.5rem;
+    line-height: 0.5;
+    text-align: center;
+  }
 }

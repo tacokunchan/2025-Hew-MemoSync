@@ -1,75 +1,179 @@
-/* SignInPage.module.css */
-
-/* 画面全体：背景色をつけて中央寄せにする */
 .container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f5f7fa; /* 薄いグレーの背景 */
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  padding: 1rem;
+  background-color: #fafafa;
+  /* neutral-50 */
+  color: #171717;
+  /* neutral-900 */
+  font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+
+  /* 背景のグリッド装飾（CSSのみで再現） */
+  background-image:
+    linear-gradient(#e5e5e5 1px, transparent 1px),
+    linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-/* ログインフォームのカード部分 */
+/* --- カードスタイル --- */
 .card {
-  background-color: #ffffff;
-  padding: 2.5rem; /* 内側の余白 */
-  border-radius: 8px; /* 角丸 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* ふんわりとした影 */
   width: 100%;
-  max-width: 400px; /* 横幅が広がりすぎないように制限 */
+  max-width: 440px;
+  background-color: #ffffff;
+  padding: 3rem 2.5rem;
+
+  /* 繊細なボーダーとシャドウ */
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+
+  /* 上部のアクセントライン */
+  border-top: 4px solid #171717;
+  position: relative;
 }
 
+/* --- タイトル --- */
 .title {
+  font-size: 1.125rem;
+  /* 18px */
+  font-weight: 400;
   text-align: center;
-  margin-bottom: 2rem;
-  color: #333;
-  font-size: 1.5rem;
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.2em;
+  /* 字間を広げて上品に */
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f5f5f5;
+  text-transform: uppercase;
 }
 
-/* 各入力欄のグループ（ラベルとinputをまとめる） */
+/* --- フォーム周り --- */
 .formGroup {
   margin-bottom: 1.5rem;
+  position: relative;
 }
 
 .label {
-  display: block; /* ラベルを独立した行にする */
+  display: block;
+  font-size: 0.75rem;
+  /* 12px */
+  font-weight: 600;
+  color: #a3a3a3;
+  /* neutral-400 */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   margin-bottom: 0.5rem;
-  color: #555;
-  font-size: 0.9rem;
-  font-weight: 500;
+  transition: color 0.3s ease;
 }
 
+/* ラベル内のテキストとinputの間に少し余白を持たせたい場合の調整
+   （元のJSX構造が <label>Text<input/></label> なので、
+     inputにmargin-topをつけることで調整します） */
+.label input {
+  margin-top: 0.5rem;
+}
+
+/* フォーカス時にラベルの色を濃くする */
+.formGroup:focus-within .label {
+  color: #171717;
+}
+
+/* --- 入力フィールド --- */
 .input {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  box-sizing: border-box; /* paddingを含めて幅を計算 */
-  transition: border-color 0.2s;
-}
+  padding: 0.75rem 0;
+  /* 上下パディング、左右は0 */
+  font-size: 0.95rem;
+  color: #171717;
+  background-color: transparent;
 
-.input:focus {
+  /* 枠線を消して下線のみにする */
+  border: none;
+  border-bottom: 1px solid #e5e5e5;
+  border-radius: 0;
+  /* iOS等での角丸リセット */
   outline: none;
-  border-color: #0070f3; /* フォーカス時の色（青） */
+
+  /* 下線アニメーション用の設定 */
+  background-image: linear-gradient(to right, #171717, #171717);
+  background-size: 0% 1px;
+  /* 最初は幅0 */
+  background-repeat: no-repeat;
+  background-position: bottom left;
+  transition: background-size 0.4s ease-out, border-color 0.3s;
 }
 
-/* 送信ボタン */
+.input::placeholder {
+  color: #d4d4d4;
+  font-weight: 300;
+}
+
+/* フォーカス時のアニメーション */
+.input:focus {
+  background-size: 100% 1px;
+  /* 幅100%に伸びる */
+  /* border-bottomの色は背景色の線で上書きされるのでそのままでOK */
+}
+
+/* --- ボタン --- */
 .button {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #0070f3; /* メインカラー（青） */
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
+  padding: 0.875rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+
+  background-color: #171717;
+  color: #ffffff;
+
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+
+  border: 1px solid #171717;
   cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 1rem;
+  transition: all 0.3s ease;
 }
 
 .button:hover {
-  background-color: #005bb5; /* ホバー時の少し濃い青 */
+  background-color: #ffffff;
+  color: #171717;
+}
+
+/* --- リンク --- */
+.link {
+  display: block;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #737373;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  width: fit-content;
+  margin: 0 auto;
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.link:hover {
+  color: #171717;
+  border-bottom-color: #171717;
+}
+
+/* --- エラーメッセージ用（JSXのインラインスタイルの代わりに使う場合） --- */
+.errorText {
+  color: #ef4444;
+  /* red-500 */
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  letter-spacing: 0.05em;
+}
+
+.serverErrorText {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #dc2626;
+  font-size: 0.8rem;
+  padding: 0.75rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.05em;
 }

@@ -1,53 +1,282 @@
-/* アプリ全体のコンテナ：画面いっぱいに広げて、子要素を横並びにする */
+/* --- レイアウト全体 --- */
 .appContainer {
-  display: flex;        /* サイドバーとメインエリアを横並びにする */
-  width: 100%;         /* 横幅いっぱい */
-  height: 100%;        /* 縦幅いっぱい */
-  overflow: hidden;     /* 画面からはみ出た分はスクロールさせない */
-  background-color: #fff;
+  min-height: 100vh;
+  display: flex;
+  background-color: #fafafa;
+  color: #171717;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+
+  /* 背景グリッド */
+  background-image:
+    linear-gradient(#e5e5e5 1px, transparent 1px),
+    linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-/* メインエリア（右側）：残りの領域を全部使う */
 .mainArea {
-  flex: 1;              /* サイドバー以外の余った幅を全部埋める */
-  display: flex;        /* ヘッダーとエディタを縦並びにする */
-  flex-direction: column; 
-  min-width: 0;         /* レイアウト崩れ防止 */
-  height: 100%;         
-}
-
-/* エディタ部分のコンテナ */
-.editorBody {
-  flex: 1;              /* ヘッダー以外の余った高さを全部埋める */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   position: relative;
-  overflow: hidden;     /* テキストエリアのスクロールだけ有効にするため */
+  transition: margin-left 0.3s;
 }
 
-/* テキストエリア本体 */
+/* --- インフォメーションバー (予定作成中など) --- */
+.infoBar {
+  padding: 0.75rem 2rem;
+  background-color: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
+  color: #171717;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.infoBar b {
+  font-weight: 600;
+  border-bottom: 1px solid #171717;
+}
+
+/* --- ワークスペース (エディタ + 右サイドバー) --- */
+/* ここで左右に分割します */
+.workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  /* 全体のスクロールを防ぐ */
+}
+
+/* --- エディタメインエリア (左側) --- */
+.editorMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 3rem 4rem;
+  /* 画面中央に寄せるためのパディング */
+  overflow-y: auto;
+}
+
+/* テキストエリア */
 .textArea {
+  flex: 1;
   width: 100%;
-  height: 100%;
-  padding: 30px;
+  max-width: 800px;
+  /* 横幅が広がりすぎないように制限 */
+  margin: 0 auto;
+  /* 中央寄せ */
+  resize: none;
   border: none;
+  outline: none;
+
+  /* 紙のようなスタイル */
+  background-color: #ffffff;
+  padding: 3rem 4rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f0f0f0;
+
   font-size: 1rem;
-  font-family: monospace;
-  resize: none;         /* 右下のつまみを消す */
-  outline: none;        /* 青い枠線を消す */
-  line-height: 1.6;
-  box-sizing: border-box; 
+  line-height: 1.8;
+  color: #171717;
+  font-family: inherit;
+}
+
+.textArea::placeholder {
+  color: #e5e5e5;
 }
 
 /* プレビューエリア */
 .previewArea {
+  flex: 1;
   width: 100%;
-  height: 100%;
-  padding: 30px;
-  overflow-y: auto;     /* 長文の時はスクロール */
-  background-color: #fff;
-  box-sizing: border-box;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  padding: 3rem 4rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f0f0f0;
+  overflow-y: auto;
+  font-size: 1rem;
+  line-height: 1.8;
 }
 
-/* Markdownのスタイル調整 */
-.previewArea h1 { border-bottom: 1px solid #eee; padding-bottom: 0.3em; margin-bottom: 1em; }
-.previewArea ul { padding-left: 20px; }
-.previewArea code { background: #f6f8fa; padding: 2px 4px; border-radius: 3px; }
+/* Markdownスタイル */
+.previewArea h1,
+.previewArea h2,
+.previewArea h3 {
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  margin-top: 2rem;
+  font-weight: 500;
+}
+
+.previewArea ul,
+.previewArea ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.previewArea blockquote {
+  border-left: 3px solid #171717;
+  padding-left: 1rem;
+  color: #737373;
+  margin: 1.5rem 0;
+}
+
+/* --- 右サイドバー (ツールパネル) --- */
+.rightPanel {
+  width: 240px;
+  /* 固定幅 */
+  background-color: #fafafa;
+  border-left: 1px solid #e5e5e5;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  overflow-y: auto;
+}
+
+.panelSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panelLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a3a3a3;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding-left: 2px;
+}
+
+/* カテゴリボタン（縦並び） */
+.categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.categoryButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e5e5;
+  color: #525252;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  border-radius: 2px;
+}
+
+.categoryButton:hover {
+  border-color: #171717;
+  color: #171717;
+  transform: translateX(2px);
+}
+
+.categoryButtonSelected {
+  background-color: #171717;
+  border-color: #171717;
+  color: #ffffff;
+  font-weight: 500;
+  box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.15);
+}
+
+.categoryButtonSelected:hover {
+  transform: none;
+  /* 選択中は動かさない */
+}
+
+/* 色選択（グリッド） */
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+.colorButton {
+  width: 100%;
+  aspect-ratio: 1;
+  /* 正方形 */
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.colorButton:hover {
+  transform: scale(1.1);
+}
+
+.colorButtonSelected {
+  transform: scale(1.15);
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 0 2px #171717;
+}
+
+/* --- レスポンシブ対応 --- */
+@media (max-width: 900px) {
+
+  /* タブレット・スマホ */
+  .workspace {
+    flex-direction: column;
+  }
+
+  .rightPanel {
+    width: 100%;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid #e5e5e5;
+    flex-direction: row;
+    /* 横並びに変更 */
+    padding: 1rem;
+    gap: 2rem;
+    overflow-x: auto;
+  }
+
+  .panelSection {
+    min-width: 150px;
+  }
+
+  .editorMain {
+    padding: 1.5rem;
+  }
+
+  .textArea,
+  .previewArea {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+
+  /* スマホ狭画面 */
+  .rightPanel {
+    flex-direction: column;
+    /* やはり縦に戻す */
+    gap: 1.5rem;
+    max-height: 200px;
+    /* 高さを制限してスクロール */
+  }
+
+  .categoryList {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .categoryButton {
+    width: auto;
+    flex: 1;
+    justify-content: center;
+  }
+}

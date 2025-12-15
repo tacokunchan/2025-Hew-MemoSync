@@ -1,164 +1,197 @@
-/* --- サイドバー全体 --- */
 .sidebar {
-  background-color: #f9f9f9;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e5e5;
+  z-index: 50;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  z-index: 100;
-  overflow: hidden;
-  white-space: nowrap;
-  position: fixed;
-  top: 0; left: 0;
   transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  border-right: 1px solid #ddd;
-  width: 280px;
-  max-width: 80vw;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  /* 自然なイージング */
+
+  /* ログイン画面と共通のグリッド背景を薄く入れる */
+  background-image:
+    linear-gradient(#f5f5f5 1px, transparent 1px),
+    linear-gradient(90deg, #f5f5f5 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 .sidebarOpen {
   transform: translateX(0);
+  box-shadow: 20px 0 40px -10px rgba(0, 0, 0, 0.05);
 }
 
-/* --- ヘッダーエリア --- */
+/* --- オーバーレイ --- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  /* 白っぽい霧のようなオーバーレイ */
+  backdrop-filter: blur(2px);
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.overlayOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --- ヘッダー部分 --- */
 .header {
-  padding: 15px;
-  border-bottom: 1px solid #e0e0e0;
-  background-color: #fff;
+  padding: 1.5rem 1.5rem 1rem;
+  background-color: #ffffff;
+  border-bottom: 4px solid #171717;
+  /* アクセントの黒線 */
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  flex-shrink: 0;
-  min-height: 60px;
+  justify-content: space-between;
 }
 
 .header h2 {
-  font-size: 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #171717;
   margin: 0;
-  font-weight: bold;
-  color: #333;
 }
 
 .headerButtons {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   align-items: center;
+}
+
+/* カレンダーなどのアイコンボタン */
+.iconButton {
+  background: transparent;
+  border: 1px solid #e5e5e5;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 0;
+  /* 角丸なし */
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.iconButton:hover {
+  background-color: #f5f5f5;
+  border-color: #171717;
+}
+
+/* 新規作成ボタン */
+.newButton {
+  background-color: #171717;
+  color: #ffffff;
+  border: 1px solid #171717;
+  font-size: 0.7rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.newButton:hover {
+  background-color: #ffffff;
+  color: #171717;
 }
 
 /* --- リストエリア --- */
 .listContainer {
   flex: 1;
   overflow-y: auto;
-  background-color: #fff;
-  position: relative;
-  width: 280px;
+  padding: 0;
 }
 
 .list {
   list-style: none;
-  padding: 0;
   margin: 0;
-  width: 100%;
+  padding: 0;
 }
 
-/* セクション見出し */
-.sectionHeader {
-  background-color: #f4f4f5;
-  color: #52525b;
-  font-size: 0.8rem;
-  font-weight: bold;
-  padding: 8px 15px;
-  border-bottom: 1px solid #e4e4e7;
-  border-top: 1px solid #e4e4e7;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-/* アイテム本体 */
+/* --- リストアイテム --- */
 .item {
-  padding: 12px 15px;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
-  background-color: #fff;
-  transition: background 0.2s;
-  display: block; /* li要素用 */
+  transition: all 0.2s ease;
+  position: relative;
+  background-color: #ffffff;
 }
 
-.item:hover { background-color: #f5f5f5; }
-
-.activeItem { 
-  background-color: #e6f7ff !important;
-  border-left: 4px solid #0070f3; 
-  padding-left: 11px; 
+.item:hover {
+  background-color: #fafafa;
 }
 
-/* アイテムの中身 */
+/* 選択中のアイテム */
+.activeItem {
+  background-color: #f5f5f5;
+}
+
+/* 選択中の左端のアクセントライン */
+.activeItem::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #171717;
+}
+
 .itemContent {
   display: flex;
   flex-direction: column;
-  overflow: hidden; 
+  gap: 0.4rem;
 }
 
 .itemTitle {
+  font-size: 0.9rem;
   font-weight: 500;
-  font-size: 0.95rem;
+  color: #171717;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #333;
 }
 
 .itemDate {
-  font-size: 0.75rem;
-  color: #999;
-  margin-top: 2px;
+  font-size: 0.7rem;
+  color: #a3a3a3;
+  font-family: monospace;
+  /* 日付は等幅フォントで整列 */
 }
 
-.emptyItem { padding: 20px; text-align: center; color: #aaa; }
-
-/* ボタン類 */
-.iconButton {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-}
-.iconButton:hover { background: #f0f0f0; }
-
-.newButton {
-  background-color: #333; color: #fff; border: none;
-  font-size: 0.85rem; padding: 0 12px; height: 36px;
-  border-radius: 4px; cursor: pointer; white-space: nowrap;
-  display: flex; align-items: center;
+/* カテゴリタグ */
+.categoryTag {
+  font-size: 0.65rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e5e5;
+  color: #737373;
+  padding: 2px 6px;
+  border-radius: 0;
+  /* 角丸なし */
+  letter-spacing: 0.05em;
 }
 
-/* オーバーレイ */
-.overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
-  z-index: 99;
-  opacity: 0; visibility: hidden; transition: opacity 0.3s;
-}
-.overlayOpen { opacity: 1; visibility: visible; }
-
-/* PC表示 */
-@media (min-width: 768px) {
-  .overlay { display: none; } 
-
-  .sidebar {
-    position: relative;
-    transform: none;
-    width: 0;
-    border-right: none;
-    transition: width 0.3s ease;
-  }
-  
-  .sidebarOpen {
-    width: 280px;
-    border-right: 1px solid #ddd;
-  }
+/* 空の状態 */
+.emptyItem {
+  padding: 2rem;
+  text-align: center;
+  color: #a3a3a3;
+  font-size: 0.8rem;
+  font-weight: 300;
 }

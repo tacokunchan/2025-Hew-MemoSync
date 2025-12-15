@@ -4,10 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import styles from './CalendarModal.module.css';
 
-// カレンダーのデフォルトスタイルが必要な場合はインポートしてください
-// import 'react-calendar/dist/Calendar.css'; 
-// ※ただし今回はmodule.cssで大幅に上書きしているため不要、もしくは競合に注意してください
-
 type Memo = {
   id: string;
   title: string;
@@ -25,6 +21,18 @@ type Props = {
   onCreateForDate: (date: Date) => void;
 };
 
+// 色のマッピング関数（CSS変数で管理しても良いが、ここではJSでコードを返す）
+const getColorCode = (colorName?: string) => {
+  switch (colorName) {
+    case 'red': return '#ef4444';
+    case 'blue': return '#3b82f6';
+    case 'green': return '#10b981';
+    case 'purple': return '#8b5cf6';
+    case 'pink': return '#ec4899';
+    default: return '#171717'; // デフォルトは黒
+  }
+};
+
 export default function CalendarModal({
   isOpen,
   onClose,
@@ -34,15 +42,18 @@ export default function CalendarModal({
 }: Props) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+  // マウント時に今日の日付をセット
   useEffect(() => {
     setSelectedDate(new Date());
-  }, []);
+  }, [isOpen]); // isOpenが変わるたびに今日に戻すか、状態を保持するかは要件次第ですが、ここでは開くたびにリセットしないように空配列かisOpen依存か調整可能。今回はシンプルに初期化時のみ。
 
   if (!isOpen || !selectedDate) return null;
 
   // タイルごとのコンテンツ描画
   const getTileContent = ({ date, view }: { date: Date; view: string }) => {
     if (view !== 'month') return null;
+
+    // 日付の一致判定
     const dayMemos = memos.filter((memo) => {
       const memoDate = new Date(memo.createdAt);
       return (
@@ -60,19 +71,8 @@ export default function CalendarModal({
               key={memo.id}
               className={styles.tileMemoTitle}
               style={{
-                backgroundColor: memo.color === 'red' ? '#ffcccc' :
-                  memo.color === 'blue' ? '#cceeff' :
-                    memo.color === 'green' ? '#ccffcc' :
-                      memo.color === 'purple' ? '#eeccee' :
-                        memo.color === 'pink' ? '#ffccee' : '#e6f7ff',
-                color: '#333',
-                fontSize: '0.7rem',
-                padding: '1px 3px',
-                borderRadius: '4px',
-                marginBottom: '2px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
+                // 背景色ではなく、左のボーダー色として使うことでシンプルさを保つ
+                borderLeftColor: getColorCode(memo.color)
               }}
             >
               {memo.title || '無題'}
@@ -89,6 +89,7 @@ export default function CalendarModal({
     return null;
   };
 
+  // 選択された日のメモ一覧用フィルタ
   const filteredMemos = memos.filter((memo) => {
     const memoDate = new Date(memo.createdAt);
     return (
@@ -99,8 +100,10 @@ export default function CalendarModal({
   });
 
   const handleCreateClick = () => {
-    onCreateForDate(selectedDate);
-    onClose();
+    if (selectedDate) {
+      onCreateForDate(selectedDate);
+      onClose(); // モーダルを閉じる
+    }
   };
 
   return (
@@ -109,52 +112,72 @@ export default function CalendarModal({
 
         {/* ヘッダー */}
         <div className={styles.header}>
-          <h2>📅 メモカレンダー</h2>
+          <h2>📅 SCHEDULE</h2>
           <button onClick={onClose} className={styles.closeButton}>×</button>
         </div>
 
-        {/* カレンダー本体エリア */}
-        <div className={styles.calendarWrapper}>
-          <Calendar
-            value={selectedDate}
-            onChange={(d) => setSelectedDate(d as Date)}
-            tileContent={getTileContent}
-            locale="ja-JP"
-            className={styles.customCalendar}
-            showNeighboringMonth={true}
-          />
-        </div>
+        {/* コンテンツラッパー（左右分割） */}
+        <div className={styles.contentWrapper}>
 
-        {/* 下部リストエリア */}
-        <div className={styles.memoList}>
-          <div className={styles.listHeader}>
-            <h3>
-              {selectedDate.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
-            </h3>
-            <button onClick={handleCreateClick} className={styles.createDateButton}>
-              ＋ 新規作成
-            </button>
+          {/* 左：カレンダー本体エリア */}
+          <div className={styles.calendarWrapper}>
+            <Calendar
+              value={selectedDate}
+              onChange={(d) => setSelectedDate(d as Date)}
+              tileContent={getTileContent}
+              locale="en-US" // デザインに合わせて英語表記に変更 (ja-JPでも可)
+              formatShortWeekday={(locale, date) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()]} // 曜日を英語3文字に固定
+              className={styles.customCalendar}
+              showNeighboringMonth={true}
+              minDetail="month"
+              prev2Label={null} // 1年移動ボタンを消してシンプルに
+              next2Label={null}
+            />
           </div>
 
-          <div className={styles.listContainer}>
-            {filteredMemos.length > 0 ? (
-              <ul>
-                {filteredMemos.map((memo) => (
-                  <li key={memo.id} onClick={() => { onSelectMemo(memo); onClose(); }}>
-                    <span className={styles.listMemoTitle}>{memo.title || '無題'}</span>
-                    <span className={styles.memoTime}>
-                      {new Date(memo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className={styles.empty}>
-                <span>この日のメモはありません</span>
-              </div>
-            )}
+          {/* 右：リストエリア */}
+          <div className={styles.memoList}>
+            <div className={styles.listHeader}>
+              <h3>
+                {selectedDate.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
+              </h3>
+              <button onClick={handleCreateClick} className={styles.createDateButton}>
+                ADD NEW PLAN
+              </button>
+            </div>
+
+            <div className={styles.listContainer}>
+              {filteredMemos.length > 0 ? (
+                <ul>
+                  {filteredMemos.map((memo) => (
+                    <li key={memo.id} onClick={() => { onSelectMemo(memo); onClose(); }}>
+                      <span className={styles.listMemoTitle}>{memo.title || 'Untitled'}</span>
+                      <span className={styles.memoTime}>
+                        {new Date(memo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {/* カテゴリや色の情報をリストにも少し出すならここに追加 */}
+                        {memo.color && (
+                          <span style={{
+                            display: 'inline-block',
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: getColorCode(memo.color),
+                            marginLeft: '8px'
+                          }} />
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className={styles.empty}>
+                  <span>No plans for this day.</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   );
