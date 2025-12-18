@@ -280,3 +280,44 @@
     justify-content: center;
   }
 }
+
+/* --- Added Styles for Toolbar & Category Chips --- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 2rem;
+  margin-bottom: 1rem;
+}
+
+.toolbarLabel {
+  font-size: 0.875rem;
+  color: #737373;
+  font-weight: 500;
+}
+
+.categoryChip {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid #e5e5e5;
+  background: white;
+  color: #525252;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.categoryChip:hover {
+  border-color: #171717;
+  color: #171717;
+  transform: translateY(-1px);
+}
+
+.categoryChipSelected {
+  background: #171717;
+  color: white;
+  border-color: #171717;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

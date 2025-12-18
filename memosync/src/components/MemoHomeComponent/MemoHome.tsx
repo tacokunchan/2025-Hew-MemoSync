@@ -269,6 +269,10 @@ export default function Home() {
     if (window.innerWidth < 768) setIsNavOpen(false);
   };
 
+  const selectedMemo = memos.find(m => m.id === selectedId);
+  // 予定モード: 新規予定作成中 (targetDateあり) または 既存メモが予定 (isSchedule=true)
+  const isScheduleMode = !!targetDate || (!!selectedMemo && selectedMemo.isSchedule === true);
+
   return (
     <div className={styles.appContainer}>
 
@@ -303,7 +307,7 @@ export default function Home() {
         )}
 
         {/* 色選択（予定の場合） */}
-        {targetDate && (
+        {isScheduleMode && (
           <div className={styles.toolbar}>
             <span className={styles.toolbarLabel}>Color:</span>
             {['red', 'blue', 'green', 'purple', 'pink'].map((c) => (
@@ -321,7 +325,7 @@ export default function Home() {
         )}
 
         {/* カテゴリ選択（メモの場合） */}
-        {!targetDate && (
+        {!isScheduleMode && (
           <div className={styles.toolbar}>
             <span className={styles.toolbarLabel}>Category:</span>
             {['なし', '重要', '課題', 'アイデア', 'その他'].map((cat) => (
@@ -336,7 +340,7 @@ export default function Home() {
           </div>
         )}
 
-        <main className={styles.editorBody}>
+        <main className={styles.editorMain}>
           {isPreview ? (
             <div className={styles.previewArea}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>

@@ -195,3 +195,37 @@
   font-size: 0.8rem;
   font-weight: 300;
 }
+
+/* --- Desktop Layout Overrides (Split View) --- */
+@media (min-width: 768px) {
+  .sidebar {
+    position: relative;
+    transform: none;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    height: auto;
+    min-height: 100vh;
+    box-shadow: none;
+
+    /* Reveal/Hide logic via margin */
+    margin-left: -280px;
+    transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sidebarOpen {
+    transform: none;
+    margin-left: 0;
+    box-shadow: none;
+    border-right: 1px solid #e5e5e5;
+  }
+
+  .overlay {
+    display: none;
+    pointer-events: none;
+  }
+
+  .overlayOpen {
+    display: none;
+  }
+}

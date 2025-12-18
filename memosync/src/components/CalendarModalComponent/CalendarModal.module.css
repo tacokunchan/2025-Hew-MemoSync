@@ -48,7 +48,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid #e5e5e5;
 }
 
@@ -94,8 +94,9 @@
 .calendarWrapper {
   flex: 2;
   /* 画面幅の2/3を使う */
-  padding: 2rem;
+  padding: 1rem;
   overflow-y: auto;
+  overflow-x: hidden;
   border-right: 1px solid #e5e5e5;
   display: flex;
   flex-direction: column;
@@ -114,7 +115,7 @@
 .customCalendar :global(.react-calendar__navigation) {
   display: flex;
   height: 44px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .customCalendar :global(.react-calendar__navigation button) {
@@ -160,7 +161,7 @@
 
 /* 日付タイル全体 */
 .customCalendar :global(.react-calendar__tile) {
-  height: 100px;
+  height: 80px;
   /* 高さを固定してグリッド感を出す */
   display: flex;
   flex-direction: column;
@@ -252,6 +253,7 @@
   flex-direction: column;
   border-left: 1px solid #e5e5e5;
   /* スマホ表示時は上の線になるようにメディアクエリで調整 */
+  overflow-x: hidden;
 }
 
 .listHeader {
