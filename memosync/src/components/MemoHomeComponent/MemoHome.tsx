@@ -8,6 +8,8 @@ import remarkGfm from 'remark-gfm';
 import MemoHeader from '@/components/MemoHeaderComponent/MemoHeader';
 import MemoSidebar from '@/components/MemoSidebarComponent/MemoSidebar';
 import CalendarModal from '@/components/CalendarModalComponent/CalendarModal';
+import dynamic from 'next/dynamic';
+const Whiteboard = dynamic(() => import('@/components/Whiteboard/Whiteboard'), { ssr: false });
 
 import styles from './MemoHome.module.css';
 
@@ -21,6 +23,7 @@ type Memo = {
   isSchedule?: boolean;
   color?: string;
   category?: string;
+  handwriting?: string;
 };
 
 export default function Home() {
@@ -33,6 +36,8 @@ export default function Home() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [handwriting, setHandwriting] = useState('');
+  const [editorMode, setEditorMode] = useState<'text' | 'handwriting'>('text');
 
   // ★重要: これが入っているときは「予定作成モード」とする
   const [targetDate, setTargetDate] = useState<Date | null>(null);
@@ -96,17 +101,18 @@ export default function Home() {
             ...memo,
             title: title || memo.title,
             content: content,
+            handwriting: handwriting,
             updatedAt: new Date().toISOString(),
           }
           : memo
       )
     );
-  }, [title, content, selectedId]);
+  }, [title, content, handwriting, selectedId]);
 
   // ★自動保存ロジック（修正版）
   useEffect(() => {
     if (!selectedId) return;
-    if (!title && !content) return;
+    if (!title && !content && !handwriting) return;
     if (!userId) return;
 
     const timer = setTimeout(async () => {
@@ -122,9 +128,9 @@ export default function Home() {
             title,
             content,
             userId,
-            // ★手元のデータの状態（メモor予定）を維持する
             isSchedule: currentMemo.isSchedule ?? false,
             createdAt: currentMemo.createdAt,
+            handwriting,
           }),
         });
 
@@ -143,7 +149,7 @@ export default function Home() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [title, content, selectedId, userId, memos]);
+  }, [title, content, handwriting, selectedId, userId, memos]);
 
   // ★手動保存ロジック（修正版）
   const handleSave = async () => {
@@ -167,6 +173,7 @@ export default function Home() {
             color,
             category,
             createdAt: currentMemo.createdAt,
+            handwriting,
           }),
         });
 
@@ -194,6 +201,7 @@ export default function Home() {
             color,
             category,
             createdAt: targetDate ? targetDate.toISOString() : new Date().toISOString(),
+            handwriting,
           }),
         });
 
@@ -235,6 +243,8 @@ export default function Home() {
     setSelectedId(memo.id);
     setTitle(memo.title);
     setContent(memo.content);
+    setHandwriting(memo.handwriting || '');
+    setEditorMode('text');
     setColor(memo.color || 'blue');
     setCategory(memo.category || 'なし');
     setIsPreview(false);
@@ -247,6 +257,8 @@ export default function Home() {
     setSelectedId(null);
     setTitle('');
     setContent('');
+    setHandwriting('');
+    setEditorMode('text');
     setColor('blue');
     setCategory('なし');
     setIsPreview(false);
@@ -261,6 +273,8 @@ export default function Home() {
     setTargetDate(date);
     setTitle('');
     setContent('');
+    setHandwriting('');
+    setEditorMode('text');
     setColor('blue');
     setCategory('なし');
     setIsPreview(false);
@@ -317,6 +331,10 @@ export default function Home() {
                 className={`${styles.colorButton} ${color === c ? styles.colorButtonSelected : ''}`}
                 style={{
                   backgroundColor: c === 'red' ? '#ffcccc' : c === 'blue' ? '#cceeff' : c === 'green' ? '#ccffcc' : c === 'purple' ? '#eeccee' : '#ffccee',
+                  width: '30px',    // 小さく調整
+                  height: '30px',   // 小さく調整
+                  padding: 0,       // 余白をリセット
+                  minWidth: '30px'  // 潰れ防止
                 }}
                 title={c}
               />
@@ -340,6 +358,37 @@ export default function Home() {
           </div>
         )}
 
+        {/* Editor Mode Toggle */}
+        <div className={styles.modeToggle} style={{ padding: '0 20px', marginBottom: '10px' }}>
+          <button
+            onClick={() => setEditorMode('text')}
+            style={{
+              padding: '8px 16px',
+              marginRight: '10px',
+              borderRadius: '20px',
+              border: 'none',
+              background: editorMode === 'text' ? '#333' : '#eee',
+              color: editorMode === 'text' ? '#fff' : '#333',
+              cursor: 'pointer'
+            }}
+          >
+            📝 Text
+          </button>
+          <button
+            onClick={() => setEditorMode('handwriting')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '20px',
+              border: 'none',
+              background: editorMode === 'handwriting' ? '#333' : '#eee',
+              color: editorMode === 'handwriting' ? '#fff' : '#333',
+              cursor: 'pointer'
+            }}
+          >
+            🖊️ Handwriting
+          </button>
+        </div>
+
         <main className={styles.editorMain}>
           {isPreview ? (
             <div className={styles.previewArea}>
@@ -348,12 +397,28 @@ export default function Home() {
               </ReactMarkdown>
             </div>
           ) : (
-            <textarea
-              className={styles.textArea}
-              placeholder="ここにメモを入力してください..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
+            <>
+              {/* HandWriting Area */}
+              {editorMode === 'handwriting' && (
+                <div style={{ height: 'calc(100vh - 250px)', padding: '0 20px' }} className={styles.whiteboardWrapper}>
+                  <Whiteboard
+                    key={selectedId || 'new'}
+                    initialData={handwriting}
+                    onChange={setHandwriting}
+                    readOnly={isPreview}
+                  />
+                </div>
+              )}
+
+              {editorMode === 'text' && (
+                <textarea
+                  className={styles.textArea}
+                  placeholder="ここにメモを入力してください..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                />
+              )}
+            </>
           )}
         </main>
       </div>

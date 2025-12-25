@@ -1,0 +1,56 @@
+.container {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f9f9f9;
+    position: relative;
+    width: 1000px;
+    height: 450px;
+    display: block;
+    margin: 0 auto;
+}
+
+.container :global(.canvas-container) {
+    width: 100% !important;
+    height: 100% !important;
+    touch-action: none;
+}
+
+.canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.toolbar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: white;
+    padding: 5px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+}
+
+.toolButton {
+    padding: 5px 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.toolButton:hover {
+    background: #f0f0f0;
+}
+
+.active {
+    background: #e6f7ff;
+    border-color: #1890ff;
+    color: #1890ff;
+}

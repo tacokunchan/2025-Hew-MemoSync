@@ -24,12 +24,12 @@ type Props = {
 // 色のマッピング関数（CSS変数で管理しても良いが、ここではJSでコードを返す）
 const getColorCode = (colorName?: string) => {
   switch (colorName) {
-    case 'red': return '#ef4444';
-    case 'blue': return '#3b82f6';
-    case 'green': return '#10b981';
-    case 'purple': return '#8b5cf6';
-    case 'pink': return '#ec4899';
-    default: return '#171717'; // デフォルトは黒
+    case 'red': return '#fca5a5'; // lighter red
+    case 'blue': return '#93c5fd'; // lighter blue
+    case 'green': return '#6ee7b7'; // lighter green
+    case 'purple': return '#c4b5fd'; // lighter purple
+    case 'pink': return '#f9a8d4'; // lighter pink
+    default: return '#525252'; // lighter black (gray)
   }
 };
 

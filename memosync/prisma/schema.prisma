@@ -34,6 +34,9 @@ model Memo {
   // カテゴリ（メモ用）: 'Important', 'Task', etc.
   category  String?
 
+  // 手書きデータ (Fabric.js JSON)
+  handwriting String?
+
   // 誰のメモか紐付ける設定
   userId    String
   user      User     @relation(fields: [userId], references: [id])
