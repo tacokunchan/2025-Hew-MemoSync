@@ -2,14 +2,14 @@
 
 import React from "react";
 import styles from './LogIn.module.css';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 
 const LogInPageComponent = () => {
     const router = useRouter();
 
     const [email, setEmail] = React.useState<string>('');
     const [password, setPassword] = React.useState<string>('');
-    
+
     // エラーメッセージ用のstate
     const [errors, setErrors] = React.useState<{ email?: string; password?: string }>({});
     const [serverError, setServerError] = React.useState<string>('');
@@ -23,7 +23,7 @@ const LogInPageComponent = () => {
             newErrors.email = "メールアドレスを入力してください";
             isValid = false;
         }
-        
+
         if (!password) {
             newErrors.password = "パスワードを入力してください";
             isValid = false;
@@ -35,7 +35,7 @@ const LogInPageComponent = () => {
 
     const handleLogIn = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        
+
         // 前回のサーバーエラーを消す
         setServerError('');
 
@@ -65,7 +65,7 @@ const LogInPageComponent = () => {
             // 成功時
             console.log("ログイン成功");
             localStorage.setItem('userId', data.id);
-            router.push('/Home');   
+            router.push('/Home');
 
         } catch (error) {
             console.error("通信エラー:", error);
@@ -89,12 +89,12 @@ const LogInPageComponent = () => {
                     <div className={styles.formGroup}>
                         <label className={styles.label}>
                             メールアドレス
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 className={styles.input}
-                                name="email" 
+                                name="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)} 
+                                onChange={(e) => setEmail(e.target.value)}
                                 placeholder="メールアドレスを入力"
                             />
                         </label>
@@ -104,23 +104,24 @@ const LogInPageComponent = () => {
                     <div className={styles.formGroup}>
                         <label className={styles.label}>
                             パスワード
-                            <input 
-                                type="password" 
+                            <input
+                                type="password"
                                 className={styles.input}
-                                name="password" 
+                                name="password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)} 
+                                onChange={(e) => setPassword(e.target.value)}
                                 placeholder="パスワードを入力"
                             />
                         </label>
                         {errors.password && <p style={errorStyle}>{errors.password}</p>}
                     </div>
 
-                    <input 
-                        type="submit" 
-                        value="ログイン" 
+                    <input
+                        type="submit"
+                        value="ログイン"
                         className={styles.button}
                     />
+                    <a href="/" className={styles.link}>新規登録はこちら</a>
                 </form>
             </div>
         </div>

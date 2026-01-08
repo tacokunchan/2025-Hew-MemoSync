@@ -11,6 +11,8 @@ type Memo = {
   createdAt: string;
   isSchedule?: boolean;
   color?: string;
+  userId: string;
+  isShared?: boolean;
 };
 
 type Props = {

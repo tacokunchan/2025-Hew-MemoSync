@@ -8,9 +8,10 @@ interface WhiteboardProps {
     initialData?: string | null;
     onChange?: (json: string) => void;
     readOnly?: boolean;
+    syncData?: string | null;
 }
 
-export default function Whiteboard({ initialData, onChange, readOnly = false }: WhiteboardProps) {
+export default function Whiteboard({ initialData, onChange, readOnly = false, syncData }: WhiteboardProps) {
     const canvasEl = useRef<HTMLCanvasElement>(null);
     const canvasInstance = useRef<fabric.Canvas | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -113,6 +114,31 @@ export default function Whiteboard({ initialData, onChange, readOnly = false }: 
             canvasInstance.current.isDrawingMode = isDrawing && !readOnly;
         }
     }, [isDrawing, readOnly]);
+
+    // リモートからのデータ同期
+    useEffect(() => {
+        if (!syncData || !canvasInstance.current) return;
+
+        const applySync = async () => {
+            const canvas = canvasInstance.current;
+            if (!canvas) return;
+
+            try {
+                // If the user is currently drawing, maybe we should pause sync or just apply?
+                // Applying might disrupt the stroke. 
+                // However, since we receive updates after "path:created" from others, it should be fine.
+                // But strict equality check is good to avoid redundant renders.
+                const currentJson = JSON.stringify(canvas.toJSON());
+                if (currentJson === syncData) return;
+
+                await canvas.loadFromJSON(JSON.parse(syncData));
+                canvas.renderAll();
+            } catch (e) {
+                console.error("Sync Error:", e);
+            }
+        };
+        applySync();
+    }, [syncData]);
 
     const clearCanvas = () => {
         const canvas = canvasInstance.current;

@@ -229,3 +229,32 @@
     display: none;
   }
 }
+
+/* --- フッター部分 (ログアウトなど) --- */
+.footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e5e5;
+  background-color: #ffffff;
+}
+
+.logoutButton {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: transparent;
+  border: 1px solid #f87171;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.logoutButton:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}

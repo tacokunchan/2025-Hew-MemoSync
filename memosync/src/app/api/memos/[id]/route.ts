@@ -52,7 +52,7 @@ export async function PUT(
       );
     }
 
-    const { title, content, isSchedule, createdAt, color, category, handwriting } = body;
+    const { title, content, isSchedule, createdAt, color, category, handwriting, isShared, password } = body;
 
     const memo = await prisma.memo.update({
       where: { id },
@@ -63,6 +63,8 @@ export async function PUT(
         color,
         category,
         handwriting,
+        isShared,
+        password,
         createdAt: createdAt ? new Date(createdAt) : undefined,
       },
     });

@@ -40,4 +40,8 @@ model Memo {
   // 誰のメモか紐付ける設定
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+
+  // 共有機能用
+  isShared Boolean @default(false)
+  password String? // 共有用パスワード
 }

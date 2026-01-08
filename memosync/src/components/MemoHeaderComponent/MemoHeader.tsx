@@ -9,6 +9,7 @@ type Props = {
   onToggleNav: () => void; // ★これが3本線ボタンの動作
   onSave?: () => void;
   onDelete?: () => void;
+  onShare?: () => void;
   isPreview?: boolean;
   setIsPreview?: (value: boolean) => void;
   showEditorControls?: boolean;
@@ -20,6 +21,7 @@ export default function MemoHeader({
   onToggleNav,
   onSave,
   onDelete,
+  onShare,
   isPreview = false,
   setIsPreview,
   showEditorControls = true,
@@ -51,6 +53,11 @@ export default function MemoHeader({
       {/* 右側：アクションボタン */}
       {showEditorControls && (
         <div className={styles.actions}>
+          {onShare && (
+            <button onClick={onShare} className={styles.previewButton} style={{ marginRight: '8px', backgroundColor: '#eebbbb' }}>
+              共有
+            </button>
+          )}
           <button
             onClick={() => setIsPreview && setIsPreview(!isPreview)}
             className={styles.previewButton}
