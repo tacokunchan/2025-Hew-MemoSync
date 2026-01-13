@@ -18,32 +18,7 @@
   align-items: center;
 }
 
-.menuButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  transition: opacity 0.3s;
-}
-
-.menuButton:hover {
-  opacity: 0.6;
-}
-
-.bar {
-  display: block;
-  width: 20px;
-  height: 1px;
-  /* 非常に細い線 */
-  background-color: #171717;
-  transition: all 0.3s;
-}
+/* .menuButton and .bar styles removed */
 
 /* --- タイトル入力 --- */
 .titleInput {
@@ -89,6 +64,7 @@
 }
 
 /* 共通ボタンスタイル */
+.menuButton,
 .previewButton,
 .saveButton,
 .deleteButton {
@@ -104,6 +80,7 @@
   min-width: 60px;
 }
 
+.menuButton:hover,
 .previewButton:hover,
 .saveButton:hover {
   background-color: #171717;

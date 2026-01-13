@@ -6,7 +6,7 @@ import styles from './MemoHeader.module.css';
 type Props = {
   title?: string;
   setTitle?: (value: string) => void;
-  onToggleNav: () => void; // ★これが3本線ボタンの動作
+  onToggleNav: () => void; // これが3本線ボタンの動作
   onSave?: () => void;
   onDelete?: () => void;
   onShare?: () => void;
@@ -31,9 +31,7 @@ export default function MemoHeader({
       {/* 左側：ハンバーガーボタン */}
       <div className={styles.leftGroup}>
         <button onClick={onToggleNav} className={styles.menuButton}>
-          <span className={styles.bar}></span>
-          <span className={styles.bar}></span>
-          <span className={styles.bar}></span>
+          メニュー
         </button>
       </div>
 
