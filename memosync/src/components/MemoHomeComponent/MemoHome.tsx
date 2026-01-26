@@ -36,6 +36,7 @@ export default function Home() {
   const router = useRouter();
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [username, setUsername] = useState<string>('');
   const [memos, setMemos] = useState<Memo[]>([]);
   const [sharedMemos, setSharedMemos] = useState<Memo[]>([]);
 
@@ -70,6 +71,10 @@ export default function Home() {
       return;
     }
     setUserId(storedUserId);
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
     fetchMemos(storedUserId);
     fetchSharedMemos();
 
@@ -113,10 +118,10 @@ export default function Home() {
   const isOwner = currentMemo?.userId === userId;
 
   // Realtime Hook
-  const { isConnected, joinError, sendTextUpdate, sendCanvasUpdate, sendColorUpdate } = useRealtime({
+  const { isConnected, joinError, joinedRoom, sendTextUpdate, sendCanvasUpdate, sendColorUpdate, sendSyncResponse } = useRealtime({
     roomId: selectedId,
     password: enteredPasswords[selectedId || ''] || (isOwner ? currentMemo?.password : undefined),
-    enabled: !!selectedId && isShared, // Only try to join room if it is shared
+    enabled: !!selectedId && isShared && (isOwner || !!enteredPasswords[selectedId || '']), // Only try to join room if it is shared
     onTextUpdate: (newContent) => {
       setContent(newContent);
     },
@@ -129,6 +134,34 @@ export default function Home() {
     },
     onRoomCountsUpdate: (counts) => {
       setActiveCounts(counts);
+    },
+    onRequestSync: (requesterId) => {
+      // Host (or anyone with data) sends current state to requester
+      // Only owner should respond? Or anyone?
+      // Let's say if I am owner, OR if I have content and the memo is shared.
+      // Ideally only Owner or Host.
+      if (isOwner) {
+        console.log(`Sending sync response to ${requesterId}`);
+        sendSyncResponse(requesterId, {
+          title,
+          content,
+          handwriting,
+          color,
+          category
+        });
+      }
+    },
+    onSyncResponse: (data) => {
+      console.log('Received sync response:', data);
+      // Apply synced data
+      if (data.title) setTitle(data.title);
+      if (data.content) setContent(data.content);
+      if (data.handwriting) {
+        setHandwriting(data.handwriting);
+        setRemoteHandwriting(data.handwriting);
+      }
+      if (data.color) setColor(data.color);
+      if (data.category) setCategory(data.category);
     }
   });
 
@@ -381,6 +414,7 @@ export default function Home() {
       <div className={styles.mainArea}>
         <MemoHeader
           title={title}
+          username={username}
           setTitle={setTitle}
           onToggleNav={() => setIsNavOpen(!isNavOpen)}
           onSave={() => handleSave()}
@@ -397,7 +431,7 @@ export default function Home() {
             📅 <b>{targetDate.toLocaleDateString()}</b> の予定を作成中
           </div>
         )}
-        {isConnected && isShared && (
+        {isConnected && isShared && joinedRoom === selectedId && (
           <div className={styles.infoBar} style={{ backgroundColor: '#e6ffe6', color: '#006600' }}>
             🟢 共有中: リアルタイム同期が有効です
           </div>

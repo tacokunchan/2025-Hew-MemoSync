@@ -9,6 +9,8 @@ type RealtimeOptions = {
     onCanvasUpdate?: (data: string) => void;
     onColorUpdate?: (color: string) => void;
     onRoomCountsUpdate?: (counts: Record<string, number>) => void;
+    onRequestSync?: (requesterId: string) => void;
+    onSyncResponse?: (data: any) => void;
 };
 
 export const useRealtime = ({
@@ -19,6 +21,8 @@ export const useRealtime = ({
     onCanvasUpdate,
     onColorUpdate,
     onRoomCountsUpdate,
+    onRequestSync,
+    onSyncResponse,
 }: RealtimeOptions) => {
     const socketRef = useRef<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
@@ -26,11 +30,11 @@ export const useRealtime = ({
     const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
 
     // Keep latest callbacks in ref to avoid re-binding listeners
-    const callbacksRef = useRef({ onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate });
+    const callbacksRef = useRef({ onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRequestSync, onSyncResponse });
 
     useEffect(() => {
-        callbacksRef.current = { onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate };
-    }, [onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate]);
+        callbacksRef.current = { onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRequestSync, onSyncResponse };
+    }, [onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRequestSync, onSyncResponse]);
 
     // 1. Establish persistent connection
     useEffect(() => {
@@ -87,6 +91,14 @@ export const useRealtime = ({
             socket.on('color-update', (data: { color: string }) => {
                 callbacksRef.current.onColorUpdate?.(data.color);
             });
+
+            socket.on('request-sync', (data: { requesterId: string }) => {
+                callbacksRef.current.onRequestSync?.(data.requesterId);
+            });
+
+            socket.on('sync-response', (data: any) => {
+                callbacksRef.current.onSyncResponse?.(data);
+            });
         }
 
         // Clean up ONLY on unmount (component destroys)
@@ -107,15 +119,25 @@ export const useRealtime = ({
         // Only try to join if we are connected, enabled is true, and we have a roomId
         if (isConnected && enabled && roomId) {
             // Join if not already in this room
-            // Note: If password changed, we might want to re-emit join-request too? 
-            // For now, assume if roomId matches joinedRoom, we are good.
-            // But if we failed before (joinError), we should retry if password changed.
-
             const shouldJoin = joinedRoom !== roomId || (joinError && password);
 
             if (shouldJoin) {
+                // If we were in another room, leave it first
+                if (joinedRoom) {
+                    console.log(`Leaving room: ${joinedRoom}`);
+                    socket.emit('leave-room', joinedRoom);
+                    setJoinedRoom(null);
+                }
+
                 console.log(`Requesting join for room: ${roomId}`);
                 socket.emit('join-request', { roomId, password });
+            }
+        } else {
+            // If we disabled or no roomId, but we are in a room -> LEAVE
+            if (joinedRoom && socket) {
+                console.log(`Leaving room (disabled/changed): ${joinedRoom}`);
+                socket.emit('leave-room', joinedRoom);
+                setJoinedRoom(null);
             }
         }
     }, [roomId, password, enabled, isConnected, joinedRoom, joinError]);
@@ -139,6 +161,25 @@ export const useRealtime = ({
         }
     }, [joinedRoom]);
 
+    const sendSyncResponse = useCallback((targetId: string, data: any) => {
+        if (socketRef.current) {
+            socketRef.current.emit('sync-response', { targetId, ...data });
+        }
+    }, []);
+
+    const requestSync = useCallback(() => {
+        if (socketRef.current && joinedRoom) {
+            socketRef.current.emit('request-sync', joinedRoom);
+        }
+    }, [joinedRoom]);
+
+    // Auto-request sync when room is joined
+    useEffect(() => {
+        if (joinedRoom) {
+            requestSync();
+        }
+    }, [joinedRoom, requestSync]);
+
     return {
         isConnected,
         joinError,
@@ -146,5 +187,7 @@ export const useRealtime = ({
         sendTextUpdate,
         sendCanvasUpdate,
         sendColorUpdate,
+        sendSyncResponse,
+        requestSync,
     };
 };

@@ -65,6 +65,9 @@ const LogInPageComponent = () => {
             // 成功時
             console.log("ログイン成功");
             localStorage.setItem('userId', data.id);
+            if (data.username) {
+                localStorage.setItem('username', data.username);
+            }
             router.push('/Home');
 
         } catch (error) {

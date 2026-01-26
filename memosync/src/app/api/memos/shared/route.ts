@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic'; // Ensure not cached
 
@@ -31,7 +29,8 @@ export async function GET() {
         });
         return NextResponse.json(sharedMemos);
     } catch (error) {
-        console.error('Failed to ask shared memos', error);
-        return NextResponse.json({ error: 'Failed to fetch shared memos' }, { status: 500 });
+        console.error('Failed to ask shared memos - Full Error:', error);
+        // 詳細なエラーメッセージを返すように一時的に変更（デバッグ用）
+        return NextResponse.json({ error: `Failed to fetch shared memos: ${(error as Error).message}` }, { status: 500 });
     }
 }

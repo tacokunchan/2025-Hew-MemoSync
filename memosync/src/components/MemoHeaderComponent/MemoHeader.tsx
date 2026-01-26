@@ -6,13 +6,14 @@ import styles from './MemoHeader.module.css';
 type Props = {
   title?: string;
   setTitle?: (value: string) => void;
-  onToggleNav: () => void; // これが3本線ボタンの動作
+  onToggleNav: () => void;
   onSave?: () => void;
   onDelete?: () => void;
   onShare?: () => void;
   isPreview?: boolean;
   setIsPreview?: (value: boolean) => void;
   showEditorControls?: boolean;
+  username?: string;
 };
 
 export default function MemoHeader({
@@ -25,6 +26,7 @@ export default function MemoHeader({
   isPreview = false,
   setIsPreview,
   showEditorControls = true,
+  username,
 }: Props) {
   return (
     <header className={styles.header}>
@@ -51,6 +53,7 @@ export default function MemoHeader({
       {/* 右側：アクションボタン */}
       {showEditorControls && (
         <div className={styles.actions}>
+          {username && <span className={styles.username}>{username}</span>}
           {onShare && (
             <button onClick={onShare} className={styles.previewButton} style={{ marginRight: '8px', backgroundColor: '#eebbbb' }}>
               共有

@@ -10,7 +10,19 @@ const port = 3000;
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
-const prisma = new PrismaClient();
+
+const databaseUrl = process.env.DATABASE_URL;
+const connectionUrl = (databaseUrl && !databaseUrl.includes('pgbouncer=true'))
+  ? `${databaseUrl}${databaseUrl.includes('?') ? '&' : '?'}pgbouncer=true`
+  : databaseUrl;
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: connectionUrl,
+    },
+  },
+});
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
@@ -90,6 +102,25 @@ app.prepare().then(() => {
     });
 
     // 色更新
+    // 退出処理
+    socket.on("leave-room", (roomId) => {
+      socket.leave(roomId);
+      console.log(`Socket ${socket.id} left room ${roomId}`);
+      broadcastRoomCounts();
+    });
+
+    // 接続時に最新状態を他のクライアント（ホストなど）に要求する
+    socket.on("request-sync", (roomId) => {
+      // ルーム内の他のクライアントに同期リクエストを転送
+      socket.to(roomId).emit("request-sync", { requesterId: socket.id });
+    });
+
+    // 他のクライアントからの同期リクエストに応答する
+    socket.on("sync-response", (data) => {
+      // targetId (要求者) にだけデータを送る
+      io.to(data.targetId).emit("sync-response", data);
+    });
+
     socket.on("color-update", (data) => {
       socket.to(data.roomId).emit("color-update", data);
     });
