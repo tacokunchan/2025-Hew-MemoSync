@@ -4,11 +4,14 @@ import { io, Socket } from 'socket.io-client';
 type RealtimeOptions = {
     roomId: string | null;
     password?: string;
+    username?: string; // Additional prop
     enabled: boolean;
     onTextUpdate?: (content: string) => void;
     onCanvasUpdate?: (data: string) => void;
     onColorUpdate?: (color: string) => void;
     onRoomCountsUpdate?: (counts: Record<string, number>) => void;
+    onRoomUsersUpdate?: (users: { socketId: string, username: string }[]) => void; // New callback
+    onCursorMove?: (data: { userId: string, username: string, x: number, y: number }) => void; // New callback
     onRequestSync?: (requesterId: string) => void;
     onSyncResponse?: (data: any) => void;
 };
@@ -16,11 +19,14 @@ type RealtimeOptions = {
 export const useRealtime = ({
     roomId,
     password,
+    username,
     enabled,
     onTextUpdate,
     onCanvasUpdate,
     onColorUpdate,
     onRoomCountsUpdate,
+    onRoomUsersUpdate,
+    onCursorMove,
     onRequestSync,
     onSyncResponse,
 }: RealtimeOptions) => {
@@ -30,11 +36,11 @@ export const useRealtime = ({
     const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
 
     // Keep latest callbacks in ref to avoid re-binding listeners
-    const callbacksRef = useRef({ onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRequestSync, onSyncResponse });
+    const callbacksRef = useRef({ onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse });
 
     useEffect(() => {
-        callbacksRef.current = { onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRequestSync, onSyncResponse };
-    }, [onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRequestSync, onSyncResponse]);
+        callbacksRef.current = { onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse };
+    }, [onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse]);
 
     // 1. Establish persistent connection
     useEffect(() => {
@@ -68,6 +74,10 @@ export const useRealtime = ({
                 callbacksRef.current.onRoomCountsUpdate?.(counts);
             });
 
+            socket.on('room-users-update', (users: { socketId: string, username: string }[]) => {
+                callbacksRef.current.onRoomUsersUpdate?.(users);
+            });
+
             socket.on('join-success', (room) => {
                 console.log('Joined room:', room);
                 setJoinedRoom(room);
@@ -90,6 +100,10 @@ export const useRealtime = ({
 
             socket.on('color-update', (data: { color: string }) => {
                 callbacksRef.current.onColorUpdate?.(data.color);
+            });
+
+            socket.on('cursor-move', (data: { userId: string, username: string, x: number, y: number }) => {
+                callbacksRef.current.onCursorMove?.(data);
             });
 
             socket.on('request-sync', (data: { requesterId: string }) => {
@@ -119,7 +133,16 @@ export const useRealtime = ({
         // Only try to join if we are connected, enabled is true, and we have a roomId
         if (isConnected && enabled && roomId) {
             // Join if not already in this room
+            // Re-join if username changed? Maybe not needed strictly, but good for updating server state if we re-join.
+            // Simplified: If roomId or password or username changes while enabled, re-join.
+
+            // Check if we are already in the correct room. 
+            // If joinedRoom === roomId, we are good? 
+            // But if username changed, we might want to update it. Server logic for 'update-user' isn't there, so re-join is easiest.
+
             const shouldJoin = joinedRoom !== roomId || (joinError && password);
+            // Note: We don't auto-rejoin just for username change to avoid flicker, unless we want to.
+            // Let's assume username is stable during a session usually.
 
             if (shouldJoin) {
                 // If we were in another room, leave it first
@@ -129,8 +152,8 @@ export const useRealtime = ({
                     setJoinedRoom(null);
                 }
 
-                console.log(`Requesting join for room: ${roomId}`);
-                socket.emit('join-request', { roomId, password });
+                console.log(`Requesting join for room: ${roomId} as ${username}`);
+                socket.emit('join-request', { roomId, password, username });
             }
         } else {
             // If we disabled or no roomId, but we are in a room -> LEAVE
@@ -140,7 +163,7 @@ export const useRealtime = ({
                 setJoinedRoom(null);
             }
         }
-    }, [roomId, password, enabled, isConnected, joinedRoom, joinError]);
+    }, [roomId, password, username, enabled, isConnected, joinedRoom, joinError]);
 
 
     const sendTextUpdate = useCallback((content: string) => {
@@ -158,6 +181,13 @@ export const useRealtime = ({
     const sendColorUpdate = useCallback((color: string) => {
         if (socketRef.current && joinedRoom) {
             socketRef.current.emit('color-update', { roomId: joinedRoom, color });
+        }
+    }, [joinedRoom]);
+
+    const sendCursorMove = useCallback((x: number, y: number) => {
+        if (socketRef.current && joinedRoom) {
+            // Throttle? For now, raw.
+            socketRef.current.emit('cursor-move', { roomId: joinedRoom, x, y });
         }
     }, [joinedRoom]);
 
@@ -187,6 +217,7 @@ export const useRealtime = ({
         sendTextUpdate,
         sendCanvasUpdate,
         sendColorUpdate,
+        sendCursorMove,
         sendSyncResponse,
         requestSync,
     };

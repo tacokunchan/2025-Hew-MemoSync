@@ -11,6 +11,7 @@ import CalendarModal from '@/components/CalendarModalComponent/CalendarModal';
 import ShareModal from '@/components/ShareModals/ShareModal';
 import PasswordModal from '@/components/ShareModals/PasswordModal';
 import { useRealtime } from '@/hooks/useRealtime';
+import CursorOverlay from '@/components/CursorOverlay';
 
 import dynamic from 'next/dynamic';
 const Whiteboard = dynamic(() => import('@/components/Whiteboard/Whiteboard'), { ssr: false });
@@ -29,6 +30,7 @@ type Memo = {
   handwriting?: string;
   isShared?: boolean;
   password?: string;
+  hasPassword?: boolean;
   userId: string;
 };
 
@@ -55,7 +57,9 @@ export default function Home() {
 
   const [isNavOpen, setIsNavOpen] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
+
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
 
   // Sharing State
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -63,6 +67,23 @@ export default function Home() {
   const [enteredPasswords, setEnteredPasswords] = useState<Record<string, string>>({});
   const [remoteHandwriting, setRemoteHandwriting] = useState<string | null>(null);
   const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
+  const [activeUsers, setActiveUsers] = useState<{ socketId: string; username: string }[]>([]);
+  const [peerCursors, setPeerCursors] = useState<Record<string, { x: number; y: number; username: string; color: string; mode?: string }>>({});
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // Text Import State
+  const [pendingImportText, setPendingImportText] = useState<string | null>(null);
+
+  // Generate a color for a user based on their ID/Name
+  const getUserColor = (id: string) => {
+    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33A8', '#33FFF5', '#F5FF33'];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -118,10 +139,11 @@ export default function Home() {
   const isOwner = currentMemo?.userId === userId;
 
   // Realtime Hook
-  const { isConnected, joinError, joinedRoom, sendTextUpdate, sendCanvasUpdate, sendColorUpdate, sendSyncResponse } = useRealtime({
+  const { isConnected, joinError, joinedRoom, sendTextUpdate, sendCanvasUpdate, sendColorUpdate, sendCursorMove, sendSyncResponse } = useRealtime({
     roomId: selectedId,
     password: enteredPasswords[selectedId || ''] || (isOwner ? currentMemo?.password : undefined),
-    enabled: !!selectedId && isShared && (isOwner || !!enteredPasswords[selectedId || '']), // Only try to join room if it is shared
+    username: username, // Pass current username
+    enabled: !!selectedId && isShared && (isOwner || isJoined), // Only try to join room if it is shared AND (Owner or Joined)
     onTextUpdate: (newContent) => {
       setContent(newContent);
     },
@@ -134,6 +156,20 @@ export default function Home() {
     },
     onRoomCountsUpdate: (counts) => {
       setActiveCounts(counts);
+    },
+    onRoomUsersUpdate: (users) => {
+      setActiveUsers(users);
+    },
+    onCursorMove: (data) => {
+      setPeerCursors((prev) => ({
+        ...prev,
+        [data.userId]: {
+          x: data.x,
+          y: data.y,
+          username: data.username || 'Anonymous',
+          color: getUserColor(data.userId),
+        }
+      }));
     },
     onRequestSync: (requesterId) => {
       // Host (or anyone with data) sends current state to requester
@@ -164,6 +200,24 @@ export default function Home() {
       if (data.category) setCategory(data.category);
     }
   });
+
+  // Clear cursors on room change or leave
+  useEffect(() => {
+    setPeerCursors({});
+    setActiveUsers([]);
+  }, [selectedId]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isConnected || !selectedId || !isShared || !editorRef.current) return;
+
+    // Relative coordinates to the editor area
+    const rect = editorRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    sendCursorMove(x, y);
+  };
+
 
   // Handle Join Error (Wrong Password)
   useEffect(() => {
@@ -338,13 +392,12 @@ export default function Home() {
   const handleSelectMemo = (memo: Memo) => {
     console.log('📝 Selected memo:', memo);
     // Sharing Check
+    // Sharing Check
     if (memo.isShared && memo.userId !== userId) {
-      // Check if we have password
-      if (!enteredPasswords[memo.id]) {
-        setSelectedId(memo.id); // Set ID so modal knows
-        setIsPasswordModalOpen(true);
-        return;
-      }
+      setIsJoined(false); // Reset join state
+      // Do NOT check password immediately. Wait for "Join" click.
+    } else {
+      setIsJoined(true); // Owner is always joined
     }
 
     setSelectedId(memo.id);
@@ -363,6 +416,7 @@ export default function Home() {
     if (selectedId) {
       setEnteredPasswords(prev => ({ ...prev, [selectedId]: pw }));
       setIsPasswordModalOpen(false);
+      setIsJoined(true); // Allow connection
       // useRealtime will detect enteredPasswords change and try to connect
     }
   };
@@ -415,6 +469,8 @@ export default function Home() {
         <MemoHeader
           title={title}
           username={username}
+          activeUsers={activeUsers}
+          getUserColor={getUserColor}
           setTitle={setTitle}
           onToggleNav={() => setIsNavOpen(!isNavOpen)}
           onSave={() => handleSave()}
@@ -433,12 +489,39 @@ export default function Home() {
         )}
         {isConnected && isShared && joinedRoom === selectedId && (
           <div className={styles.infoBar} style={{ backgroundColor: '#e6ffe6', color: '#006600' }}>
-            🟢 共有中: リアルタイム同期が有効です
+            共有中: リアルタイム同期が有効です
           </div>
         )}
         {joinError && isShared && (
           <div className={styles.infoBar} style={{ backgroundColor: '#ffe6e6', color: 'red' }}>
-            ⚠️ 接続エラー: パスワードを確認してください
+            接続エラー: パスワードを確認してください
+          </div>
+        )}
+
+        {/* Join Button Overlay */}
+        {selectedId && isShared && !isOwner && !isJoined && (
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(255,255,255,0.8)', zIndex: 100,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <h2 style={{ marginBottom: '20px' }}>共有メモに参加</h2>
+            <button
+              onClick={() => {
+                const m = sharedMemos.find(memo => memo.id === selectedId);
+                if (m?.hasPassword) {
+                  setIsPasswordModalOpen(true);
+                } else {
+                  setIsJoined(true);
+                }
+              }}
+              style={{
+                padding: '12px 24px', fontSize: '1.2rem', backgroundColor: '#0070f3', color: 'white',
+                border: 'none', borderRadius: '8px', cursor: 'pointer'
+              }}
+            >
+              参加する
+            </button>
           </div>
         )}
 
@@ -486,7 +569,7 @@ export default function Home() {
               color: editorMode === 'text' ? '#fff' : '#333', cursor: 'pointer'
             }}
           >
-            📝 Text
+            Text
           </button>
           <button
             onClick={() => setEditorMode('handwriting')}
@@ -496,7 +579,7 @@ export default function Home() {
               color: editorMode === 'handwriting' ? '#fff' : '#333', cursor: 'pointer'
             }}
           >
-            🖊️ Handwriting
+            Handwriting
           </button>
         </div>
 
@@ -510,7 +593,15 @@ export default function Home() {
           ) : (
             <>
               {editorMode === 'handwriting' && (
-                <div style={{ height: 'calc(100vh - 250px)', padding: '0 20px' }} className={styles.whiteboardWrapper}>
+                <div
+                  style={{ height: 'calc(100vh - 250px)', padding: '0 20px', position: 'relative', overflow: 'hidden' }}
+                  className={styles.whiteboardWrapper}
+                  ref={editorRef}
+                  onMouseMove={handleMouseMove}
+                >
+                  {isConnected && isShared && joinedRoom === selectedId && !isCalendarOpen && (
+                    <CursorOverlay cursors={peerCursors} />
+                  )}
                   <Whiteboard
                     key={selectedId || 'new'}
                     initialData={handwriting}
@@ -520,20 +611,54 @@ export default function Home() {
                       sendCanvasUpdate(json);
                     }}
                     readOnly={isPreview}
+                    importText={pendingImportText}
+                    onImportProcessed={() => setPendingImportText(null)}
                   />
                 </div>
               )}
 
               {editorMode === 'text' && (
-                <textarea
-                  className={styles.textArea}
-                  placeholder="ここにメモを入力してください..."
-                  value={content}
-                  onChange={(e) => {
-                    setContent(e.target.value);
-                    sendTextUpdate(e.target.value);
-                  }}
-                />
+                <div
+                  className={styles.textContainer}
+                  ref={editorRef}
+                  onMouseMove={handleMouseMove}
+                >
+                  {isConnected && isShared && joinedRoom === selectedId && !isCalendarOpen && (
+                    <CursorOverlay cursors={peerCursors} />
+                  )}
+                  {/* Selection to Whiteboard Button */}
+                  <button
+                    style={{
+                      position: 'absolute', top: '10px', right: '20px', zIndex: 10,
+                      padding: '6px 12px', fontSize: '0.8rem', background: '#333', color: '#fff',
+                      border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: 0.8
+                    }}
+                    onClick={() => {
+                      if (window.getSelection) {
+                        const sel = window.getSelection();
+                        const text = sel ? sel.toString() : '';
+                        if (text) {
+                          setPendingImportText(text);
+                          setEditorMode('handwriting');
+                        } else {
+                          alert('テキストを選択してからクリックしてください');
+                        }
+                      }
+                    }}
+                    title="選択範囲を手書きにコピー"
+                  >
+                    To Whiteboard
+                  </button>
+                  <textarea
+                    className={styles.textArea}
+                    placeholder="ここにメモを入力してください..."
+                    value={content}
+                    onChange={(e) => {
+                      setContent(e.target.value);
+                      sendTextUpdate(e.target.value);
+                    }}
+                  />
+                </div>
               )}
             </>
           )}

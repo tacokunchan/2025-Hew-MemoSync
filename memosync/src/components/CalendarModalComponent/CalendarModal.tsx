@@ -149,33 +149,78 @@ export default function CalendarModal({
             </div>
 
             <div className={styles.listContainer}>
-              {filteredMemos.length > 0 ? (
-                <ul>
-                  {filteredMemos.map((memo) => (
-                    <li key={memo.id} onClick={() => { onSelectMemo(memo); onClose(); }}>
-                      <span className={styles.listMemoTitle}>{memo.title || 'Untitled'}</span>
-                      <span className={styles.memoTime}>
-                        {new Date(memo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {/* カテゴリや色の情報をリストにも少し出すならここに追加 */}
-                        {memo.color && (
-                          <span style={{
-                            display: 'inline-block',
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor: getColorCode(memo.color),
-                            marginLeft: '8px'
-                          }} />
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className={styles.empty}>
-                  <span>No plans for this day.</span>
-                </div>
-              )}
+              {(() => {
+                const schedules = filteredMemos.filter(m => m.isSchedule);
+                const others = filteredMemos.filter(m => !m.isSchedule);
+
+                const renderMemoList = (list: Memo[]) => (
+                  <ul>
+                    {list.map((memo) => (
+                      <li key={memo.id} onClick={() => { onSelectMemo(memo); onClose(); }}>
+                        <span className={styles.listMemoTitle}>{memo.title || 'Untitled'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <span className={styles.memoTime}>
+                            {new Date(memo.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {/* カテゴリや色の情報をリストにも少し出すならここに追加 */}
+                          {memo.color && (
+                            <span style={{
+                              display: 'inline-block',
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              backgroundColor: getColorCode(memo.color),
+                              marginLeft: '8px'
+                            }} />
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                );
+
+                if (filteredMemos.length === 0) {
+                  return (
+                    <div className={styles.empty}>
+                      <span>No plans for this day.</span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    {schedules.length > 0 && (
+                      <div style={{ marginBottom: '20px' }}>
+                        <h4 style={{
+                          fontSize: '0.9rem',
+                          color: '#555',
+                          borderBottom: '1px solid #eee',
+                          paddingBottom: '4px',
+                          marginBottom: '8px'
+                        }}>
+                          予定
+                        </h4>
+                        {renderMemoList(schedules)}
+                      </div>
+                    )}
+
+                    {others.length > 0 && (
+                      <div>
+                        <h4 style={{
+                          fontSize: '0.9rem',
+                          color: '#555',
+                          borderBottom: '1px solid #eee',
+                          paddingBottom: '4px',
+                          marginBottom: '8px'
+                        }}>
+                          メモ
+                        </h4>
+                        {renderMemoList(others)}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>

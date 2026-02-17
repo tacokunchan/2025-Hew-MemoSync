@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 const SignInPage = () => {
   const router = useRouter();
-  
+
   const [email, setEmail] = React.useState<string>('');
   const [username, setUsername] = React.useState<string>('');
   const [password, setPassword] = React.useState<string>('');
@@ -69,7 +69,7 @@ const SignInPage = () => {
 
       // 成功時
       console.log("サインイン成功");
-      router.push('/LogIn'); 
+      router.push('/LogIn');
 
     } catch (error) {
       console.error("通信エラー:", error);
@@ -84,8 +84,8 @@ const SignInPage = () => {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>サインイン</h1>
-        
+        <h1 className={styles.title}>サインアップ</h1>
+
         {/* ★追加: サーバーエラーがあれば、フォームの一番上に表示 */}
         {serverError && <p style={serverErrorStyle}>{serverError}</p>}
 
@@ -140,7 +140,7 @@ const SignInPage = () => {
           {/* ボタン */}
           <input
             type="submit"
-            value="サインイン"
+            value="サインアップ"
             className={styles.button}
           />
           <a href="/LogIn" className={styles.link}>すでにアカウントをお持ちの方はこちら</a>

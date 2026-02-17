@@ -21,13 +21,21 @@ export async function GET() {
                 isShared: true,
                 handwriting: true,
                 color: true,
-                // Do NOT return password
+                password: true, // Select password to check existence
             },
             orderBy: {
                 updatedAt: 'desc'
             }
         });
-        return NextResponse.json(sharedMemos);
+
+        // Convert to client-safe format
+        const safeSharedMemos = sharedMemos.map(memo => ({
+            ...memo,
+            hasPassword: !!memo.password && memo.password.length > 0,
+            password: undefined // Do not send password to client
+        }));
+
+        return NextResponse.json(safeSharedMemos);
     } catch (error) {
         console.error('Failed to ask shared memos - Full Error:', error);
         // 詳細なエラーメッセージを返すように一時的に変更（デバッグ用）

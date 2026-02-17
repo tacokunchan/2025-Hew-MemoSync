@@ -9,13 +9,17 @@ interface WhiteboardProps {
     onChange?: (json: string) => void;
     readOnly?: boolean;
     syncData?: string | null;
+    importText?: string | null;
+    onImportProcessed?: () => void;
 }
 
-export default function Whiteboard({ initialData, onChange, readOnly = false, syncData }: WhiteboardProps) {
+export default function Whiteboard({ initialData, onChange, readOnly = false, syncData, importText, onImportProcessed }: WhiteboardProps) {
     const canvasEl = useRef<HTMLCanvasElement>(null);
     const canvasInstance = useRef<fabric.Canvas | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [isDrawing, setIsDrawing] = useState(!readOnly);
+    const [color, setColor] = useState('#000000'); // Default black
+    const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
         // 1. 基本チェック
@@ -52,6 +56,7 @@ export default function Whiteboard({ initialData, onChange, readOnly = false, sy
             // ペン設定
             const brush = new fabric.PencilBrush(canvas);
             brush.width = 3;
+            brush.color = color;
             canvas.freeDrawingBrush = brush;
 
             // データ読み込み
@@ -78,6 +83,7 @@ export default function Whiteboard({ initialData, onChange, readOnly = false, sy
 
             canvas.on('path:created', handleChange);
             canvas.on('object:modified', handleChange);
+            setIsReady(true);
         };
 
         initCanvas();
@@ -115,6 +121,16 @@ export default function Whiteboard({ initialData, onChange, readOnly = false, sy
         }
     }, [isDrawing, readOnly]);
 
+    // 色変更（別のuseEffectで管理）
+    useEffect(() => {
+        if (canvasInstance.current) {
+            const canvas = canvasInstance.current;
+            if (canvas.freeDrawingBrush) {
+                canvas.freeDrawingBrush.color = color;
+            }
+        }
+    }, [color]);
+
     // リモートからのデータ同期
     useEffect(() => {
         if (!syncData || !canvasInstance.current) return;
@@ -140,6 +156,36 @@ export default function Whiteboard({ initialData, onChange, readOnly = false, sy
         applySync();
     }, [syncData]);
 
+
+    // テキストインポート処理
+    useEffect(() => {
+        if (!importText || !canvasInstance.current || !isReady) return;
+
+        const canvas = canvasInstance.current;
+        const textObj = new fabric.IText(importText, {
+            left: canvas.width ? canvas.width / 2 : 100,
+            top: canvas.height ? canvas.height / 2 : 100,
+            originX: 'center',
+            originY: 'center',
+            fontSize: 20,
+            fill: color,
+        });
+
+        canvas.add(textObj);
+        canvas.setActiveObject(textObj);
+        canvas.renderAll();
+
+        // テキスト追加時は即座に編集できるように移動モード（選択モード）にする
+        setIsDrawing(false);
+
+        // 変更通知
+        if (onChange) onChange(JSON.stringify(canvas.toJSON()));
+
+        // 処理完了通知
+        if (onImportProcessed) onImportProcessed();
+
+    }, [importText, color, isReady]); // colorを含めると色が変わるたびに再追加される恐れがあるが、importTextがnullに戻れば問題ない。ただ、依存配列はimportTextだけが良いかも？
+    // しかし、追加時の色を現在の色にしたいならcolorも必要。onImportProcessedでimportTextがnullになるはずなので大丈夫。
     const clearCanvas = () => {
         const canvas = canvasInstance.current;
         if (canvas && !readOnly && canvas.getContext()) {
@@ -156,6 +202,20 @@ export default function Whiteboard({ initialData, onChange, readOnly = false, sy
                 <div className={styles.toolbar}>
                     <button className={`${styles.toolButton} ${isDrawing ? styles.active : ''}`} onClick={() => setIsDrawing(true)}>🖊️ ペン</button>
                     <button className={`${styles.toolButton} ${!isDrawing ? styles.active : ''}`} onClick={() => setIsDrawing(false)}>✋ 移動</button>
+                    <div className={styles.separator} />
+                    {['#000000', '#FF0000', '#0000FF', '#FFEB3B'].map((c) => (
+                        <div
+                            key={c}
+                            className={`${styles.colorButton} ${color === c ? styles.activeColor : ''}`}
+                            style={{ backgroundColor: c }}
+                            onClick={() => {
+                                setColor(c);
+                                setIsDrawing(true); // Switch to pen when color is picked
+                            }}
+                            title={c === '#000000' ? 'Black' : c === '#FF0000' ? 'Red' : c === '#0000FF' ? 'Blue' : 'Yellow'}
+                        />
+                    ))}
+                    <div className={styles.separator} />
                     <button className={styles.toolButton} onClick={clearCanvas}>🗑️ 消去</button>
                 </div>
             )}

@@ -60,23 +60,38 @@
   overflow-y: auto;
 }
 
+/* テキストエリアのコンテナ (紙の見た目とカーソルクリッピングを担当) */
+.textContainer {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+  /* カーソルをクリッピング */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* 縦幅を親コンテナに合わせて伸ばす */
+  min-height: 0;
+  /* Flexboxの最小高さ制限を回避 */
+}
+
 /* テキストエリア */
 .textArea {
   flex: 1;
   width: 100%;
-  max-width: 800px;
-  /* 横幅が広がりすぎないように制限 */
-  margin: 0 auto;
-  /* 中央寄せ */
+  /* max-width etc moved to container */
   resize: none;
   border: none;
   outline: none;
 
-  /* 紙のようなスタイル */
-  background-color: #ffffff;
+  background-color: transparent;
+  /* コンテナの背景を使用 */
   padding: 3rem 4rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  border: 1px solid #f0f0f0;
+  /* box-shadow moved to container */
 
   font-size: 1rem;
   line-height: 1.8;
