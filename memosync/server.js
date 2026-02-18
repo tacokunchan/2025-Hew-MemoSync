@@ -57,6 +57,7 @@ app.prepare().then(() => {
       const users = sockets.map(s => ({
         socketId: s.id,
         username: s.data.username || 'Anonymous', // 保存されたユーザー名を使用
+        userId: s.data.userId, // GUID
       }));
       io.to(roomId).emit("room-users-update", users);
     };
@@ -65,7 +66,7 @@ app.prepare().then(() => {
     broadcastRoomCounts();
 
     // ルームへの参加リクエスト
-    socket.on("join-request", async ({ roomId, password, username }) => {
+    socket.on("join-request", async ({ roomId, password, username, userId }) => {
       try {
         const memo = await prisma.memo.findUnique({
           where: { id: roomId },
@@ -87,12 +88,13 @@ app.prepare().then(() => {
           return;
         }
 
-        // ユーザー名をSocketデータに保存
+        // ユーザー情報をSocketデータに保存
         socket.data.username = username;
+        socket.data.userId = userId;
 
         await socket.join(roomId);
         socket.emit("join-success", roomId);
-        console.log(`Socket ${socket.id} (${username}) joined room ${roomId}`);
+        console.log(`Socket ${socket.id} (${username}, ${userId}) joined room ${roomId}`);
 
         broadcastRoomCounts();
         broadcastRoomUsers(roomId); // ユーザーリスト更新
@@ -119,12 +121,21 @@ app.prepare().then(() => {
       // { roomId, x, y, mode }
       // 他のクライアントに送信 (送信者IDと名前を付与)
       socket.to(data.roomId).emit("cursor-move", {
-        userId: socket.id,
+        socketId: socket.id, // Socket ID for cursor key
+        userId: socket.data.userId, // GUID for color
         username: socket.data.username,
         x: data.x,
         y: data.y,
         mode: data.mode // 'text' | 'handwriting'
       });
+    });
+
+    // 共有停止（ルーム閉鎖）
+    socket.on("close-room", (roomId) => {
+      // ルーム内の全員に通知
+      io.to(roomId).emit("room-closed");
+      // サーバー側でもソケットをルームから外すなどの処理が必要ならここで行うが、
+      // クライアント側で切断させるのが確実。
     });
 
     // 退出処理

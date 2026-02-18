@@ -16,6 +16,7 @@ type Props = {
   username?: string;
   activeUsers?: { socketId: string; username: string }[];
   getUserColor?: (id: string) => string;
+  onEnterFocusMode?: () => void;
 };
 
 export default function MemoHeader({
@@ -31,6 +32,7 @@ export default function MemoHeader({
   username,
   activeUsers = [],
   getUserColor,
+  onEnterFocusMode,
 }: Props) {
   const [isUsersDropdownOpen, setIsUsersDropdownOpen] = React.useState(false);
 
@@ -118,6 +120,11 @@ export default function MemoHeader({
           {onShare && (
             <button onClick={onShare} className={styles.previewButton} style={{ marginRight: '8px', backgroundColor: '#eebbbb' }}>
               共有
+            </button>
+          )}
+          {onEnterFocusMode && (
+            <button onClick={onEnterFocusMode} className={styles.previewButton} style={{ marginRight: '8px', backgroundColor: '#e0e0e0' }} title="集中モード">
+              全画面
             </button>
           )}
           <button

@@ -6,20 +6,22 @@ type RealtimeOptions = {
     password?: string;
     username?: string; // Additional prop
     enabled: boolean;
-    onTextUpdate?: (content: string) => void;
+    onTextUpdate?: (content: string, senderId?: string) => void;
     onCanvasUpdate?: (data: string) => void;
     onColorUpdate?: (color: string) => void;
     onRoomCountsUpdate?: (counts: Record<string, number>) => void;
-    onRoomUsersUpdate?: (users: { socketId: string, username: string }[]) => void; // New callback
-    onCursorMove?: (data: { userId: string, username: string, x: number, y: number }) => void; // New callback
+    onRoomUsersUpdate?: (users: { socketId: string, username: string, userId: string }[]) => void;
+    onCursorMove?: (data: { socketId: string, userId: string, username: string, x: number, y: number }) => void;
     onRequestSync?: (requesterId: string) => void;
     onSyncResponse?: (data: any) => void;
+    onRoomClosed?: () => void; // New callback
 };
 
 export const useRealtime = ({
     roomId,
     password,
     username,
+    userId,
     enabled,
     onTextUpdate,
     onCanvasUpdate,
@@ -29,18 +31,19 @@ export const useRealtime = ({
     onCursorMove,
     onRequestSync,
     onSyncResponse,
-}: RealtimeOptions) => {
+    onRoomClosed, // New prop
+}: RealtimeOptions & { userId?: string }) => {
     const socketRef = useRef<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [joinError, setJoinError] = useState<string | null>(null);
     const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
 
     // Keep latest callbacks in ref to avoid re-binding listeners
-    const callbacksRef = useRef({ onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse });
+    const callbacksRef = useRef({ onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse, onRoomClosed });
 
     useEffect(() => {
-        callbacksRef.current = { onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse };
-    }, [onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse]);
+        callbacksRef.current = { onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse, onRoomClosed };
+    }, [onTextUpdate, onCanvasUpdate, onColorUpdate, onRoomCountsUpdate, onRoomUsersUpdate, onCursorMove, onRequestSync, onSyncResponse, onRoomClosed]);
 
     // 1. Establish persistent connection
     useEffect(() => {
@@ -74,8 +77,14 @@ export const useRealtime = ({
                 callbacksRef.current.onRoomCountsUpdate?.(counts);
             });
 
-            socket.on('room-users-update', (users: { socketId: string, username: string }[]) => {
+            socket.on('room-users-update', (users: { socketId: string, username: string, userId: string }[]) => {
                 callbacksRef.current.onRoomUsersUpdate?.(users);
+            });
+
+            socket.on('room-closed', () => {
+                console.log('Room closed by host');
+                callbacksRef.current.onRoomClosed?.();
+                setJoinedRoom(null); // Force leave state
             });
 
             socket.on('join-success', (room) => {
@@ -90,8 +99,8 @@ export const useRealtime = ({
                 setJoinedRoom(null);
             });
 
-            socket.on('text-update', (data: { content: string }) => {
-                callbacksRef.current.onTextUpdate?.(data.content);
+            socket.on('text-update', (data: { content: string, senderId?: string }) => {
+                callbacksRef.current.onTextUpdate?.(data.content, data.senderId);
             });
 
             socket.on('canvas-update', (data: { canvasData: string }) => {
@@ -102,7 +111,7 @@ export const useRealtime = ({
                 callbacksRef.current.onColorUpdate?.(data.color);
             });
 
-            socket.on('cursor-move', (data: { userId: string, username: string, x: number, y: number }) => {
+            socket.on('cursor-move', (data: { socketId: string, userId: string, username: string, x: number, y: number }) => {
                 callbacksRef.current.onCursorMove?.(data);
             });
 
@@ -152,8 +161,8 @@ export const useRealtime = ({
                     setJoinedRoom(null);
                 }
 
-                console.log(`Requesting join for room: ${roomId} as ${username}`);
-                socket.emit('join-request', { roomId, password, username });
+                console.log(`Requesting join for room: ${roomId} as ${username} (ID: ${userId})`);
+                socket.emit('join-request', { roomId, password, username, userId });
             }
         } else {
             // If we disabled or no roomId, but we are in a room -> LEAVE
@@ -166,9 +175,9 @@ export const useRealtime = ({
     }, [roomId, password, username, enabled, isConnected, joinedRoom, joinError]);
 
 
-    const sendTextUpdate = useCallback((content: string) => {
+    const sendTextUpdate = useCallback((content: string, userId: string) => {
         if (socketRef.current && joinedRoom) {
-            socketRef.current.emit('text-update', { roomId: joinedRoom, content });
+            socketRef.current.emit('text-update', { roomId: joinedRoom, content, senderId: userId });
         }
     }, [joinedRoom]);
 
@@ -210,6 +219,12 @@ export const useRealtime = ({
         }
     }, [joinedRoom, requestSync]);
 
+    const notifyRoomClosed = useCallback(() => {
+        if (socketRef.current && joinedRoom) {
+            socketRef.current.emit('close-room', joinedRoom);
+        }
+    }, [joinedRoom]);
+
     return {
         isConnected,
         joinError,
@@ -218,7 +233,8 @@ export const useRealtime = ({
         sendCanvasUpdate,
         sendColorUpdate,
         sendCursorMove,
+        onRequestSync: requestSync,
         sendSyncResponse,
-        requestSync,
+        notifyRoomClosed
     };
 };

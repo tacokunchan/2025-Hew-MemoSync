@@ -22,6 +22,7 @@ export async function GET() {
                 handwriting: true,
                 color: true,
                 password: true, // Select password to check existence
+                authorship: true, // Needed for type and client logic
             },
             orderBy: {
                 updatedAt: 'desc'
@@ -29,11 +30,17 @@ export async function GET() {
         });
 
         // Convert to client-safe format
-        const safeSharedMemos = sharedMemos.map(memo => ({
-            ...memo,
-            hasPassword: !!memo.password && memo.password.length > 0,
-            password: undefined // Do not send password to client
-        }));
+        const safeSharedMemos = sharedMemos.map(memo => {
+            const hasPass = !!memo.password && memo.password.length > 0;
+            return {
+                ...memo,
+                content: hasPass ? "" : memo.content, // Redact content if password exists
+                handwriting: hasPass ? "" : memo.handwriting, // Redact handwriting
+                authorship: hasPass ? "" : memo.authorship, // Redact authorship
+                hasPassword: hasPass,
+                password: undefined // Do not send password to client
+            };
+        });
 
         return NextResponse.json(safeSharedMemos);
     } catch (error) {

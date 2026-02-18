@@ -44,4 +44,7 @@ model Memo {
   // 共有機能用
   isShared Boolean @default(false)
   password String? // 共有用パスワード
+
+  // 誰がどこを書いたかの情報 (JSON文字列)
+  authorship String?
 }

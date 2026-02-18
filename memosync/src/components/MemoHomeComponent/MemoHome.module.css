@@ -99,6 +99,11 @@
   font-family: inherit;
 }
 
+.authorshipChar {
+  display: inline;
+  white-space: pre-wrap;
+}
+
 .textArea::placeholder {
   color: #e5e5e5;
 }
@@ -335,4 +340,35 @@
   border-color: #171717;
   font-weight: 500;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.exitFocusButton {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: background-color 0.2s;
+}
+
+.exitFocusButton:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.focusModeMain {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100vh !important;
+  width: 100vw !important;
+  max-width: none !important;
 }
