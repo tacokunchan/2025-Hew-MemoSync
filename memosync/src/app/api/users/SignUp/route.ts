@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   try {
     // 1. リクエストボディをJSONとしてパースする
     const body = await request.json();
-    
+
     // 2. 変数を分割代入で取り出す
     const { email, username, password } = body;
 
@@ -31,7 +31,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
+    //bcryptは一方通行なのでハッシュ化したものをもとに戻すことはできない。
+    //そのため、ハッシュ化したものをデータベースに保存する。
+    //ログイン時に認証するときは、ユーザが打ったものを再ハッシュして比べる。
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // ... ユーザー作成処理へ続く ...
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
     if (!SignUpProsess) {
       console.error("サインインエラー:", error);
       return;
-    }else if (SignUpProsess) {
+    } else if (SignUpProsess) {
       console.log("サインイン成功");
     }
 
