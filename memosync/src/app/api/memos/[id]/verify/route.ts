@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { password } = await req.json();
-        const { id } = params;
+        const { id } = await params;
 
         const memo = await prisma.memo.findUnique({
             where: { id },
@@ -14,13 +14,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             return NextResponse.json({ error: 'Memo not found' }, { status: 404 });
         }
 
-        // Verify password
         if (memo.password && memo.password !== password) {
             return NextResponse.json({ error: 'Incorrect password' }, { status: 401 });
         }
 
-        // Return full content
-        // We do NOT return the password itself, just the content
         const { password: _, ...safeMemo } = memo;
         return NextResponse.json(safeMemo);
 
