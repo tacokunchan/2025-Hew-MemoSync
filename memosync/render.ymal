@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: memo-socket-server
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "node server.js"
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 3001
